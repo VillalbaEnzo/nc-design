@@ -228,10 +228,10 @@ function renderMailReading(m) {
 // ---------------------------------------------------------------------------
 
 const VALIDATION_TABS = [
-  { key: "en_cours", label: "En cours" },
-  { key: "nouveau", label: "Nouveaux" },
-  { key: "cloture", label: "Clôturés" },
-  { key: "hors_sujet", label: "Hors sujet / Transfert" },
+  { key: "en_cours", label: "En cours", ico: "🔴" },
+  { key: "nouveau", label: "Nouveaux", ico: "🔵" },
+  { key: "cloture", label: "Clôturés", ico: "🟢" },
+  { key: "hors_sujet", label: "Hors sujet / Transfert", ico: "⚪" },
 ];
 
 function mailsForValidationTab(tab) {
@@ -253,21 +253,30 @@ function renderValidationPage() {
 
   return `
     <div class="validation-page">
-      <div class="pane validation-list">
-        <div class="pane-header validation-pane-header">
-          <div class="validation-tabs">
-            ${VALIDATION_TABS.map((t) => `
-              <button class="${state.validation.tab === t.key ? "active" : ""}" data-validation-tab="${t.key}">
-                ${t.label} <span class="badge-count">${mailsForValidationTab(t.key).length}</span>
-              </button>
-            `).join("")}
+      <div class="pane mail-folders">
+        <div class="pane-header">Dossiers</div>
+        ${VALIDATION_TABS.map((t) => `
+          <div class="folder ${state.validation.tab === t.key ? "active" : ""}" data-validation-tab="${t.key}">
+            <span class="ico">${t.ico}</span>
+            <span class="label">${t.label}</span>
+            <span class="count">${mailsForValidationTab(t.key).length}</span>
           </div>
+        `).join("")}
+        <div class="folder-note">
+          Le tri par dossier reprend le statut du mail. Utilisez le tri par indice IA dans la liste pour prioriser les cas les moins fiables.
+        </div>
+      </div>
+
+      <div class="pane validation-list">
+        <div class="pane-header with-action">
+          <span>${items.length} mail${items.length > 1 ? "s" : ""} à valider</span>
           <button class="btn subtle sort-toggle" data-toggle-sort>
             Indice IA ${state.validation.sort === "asc" ? "↑ croissant" : "↓ décroissant"}
           </button>
         </div>
         ${items.map((m) => renderValidationListItem(m)).join("") || `<div class="small-muted" style="padding:16px">Aucun mail dans cette catégorie.</div>`}
       </div>
+
       <div class="validation-detail">
         ${selected ? renderValidationDetail(selected) : `<div class="empty"><span class="big-ico">✅</span>Sélectionnez un mail à valider</div>`}
       </div>

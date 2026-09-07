@@ -273,24 +273,13 @@ html, body {
 /* ---------- VALIDATION PAGE ---------- */
 
 .validation-page { display: flex; width: 100%; }
-.validation-list { width: 410px; flex-shrink: 0; }
+.validation-list { width: 380px; flex-shrink: 0; }
 
-.validation-pane-header {
-  display: flex; flex-direction: column; gap: 10px;
-  text-transform: none; letter-spacing: normal; padding: 12px 14px;
+.pane-header.with-action {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  text-transform: none; letter-spacing: normal;
 }
-.validation-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
-.validation-tabs button {
-  background: transparent; border: none; padding: 6px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;
-  border-radius: 6px; color: var(--text-muted); font-family: inherit; transition: background .12s ease, color .12s ease;
-}
-.validation-tabs button:hover { background: var(--hover); color: var(--text); }
-.validation-tabs button.active { background: var(--selected); color: var(--ink-dark); }
-.validation-tabs button .badge-count {
-  background: rgba(0,0,0,0.06); border-radius: 10px; padding: 0 6px; font-size: 10.5px; margin-left: 3px;
-}
-.validation-tabs button.active .badge-count { background: rgba(93,60,190,0.15); }
-.sort-toggle { align-self: flex-start; font-size: 11.5px; padding: 6px 12px; }
+.sort-toggle { font-size: 11px; padding: 5px 10px; flex-shrink: 0; }
 
 .validation-item {
   padding: 13px 16px;
