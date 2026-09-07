@@ -118,6 +118,23 @@ function navBtn(key, label) {
   return `<button data-nav="${key}" class="${state.page === key ? "active" : ""}">${label}</button>`;
 }
 
+// Barre d'onglets horizontale partagée par les 3 pages (Mail, Validation, Suivi) :
+// remplace les anciens panneaux latéraux "Dossiers" pour gagner de la place,
+// tout en conservant le code couleur par statut sur chaque onglet.
+function renderTabBar(items, activeKey, dataAttr) {
+  return `
+    <div class="folder-tabs">
+      ${items.map((t) => `
+        <button class="${activeKey === t.key ? "active" : ""}" data-${dataAttr}="${t.key}">
+          <span class="status-dot" style="background:${t.dotColor}"></span>
+          <span class="label">${t.label}</span>
+          <span class="badge-count">${t.count}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
 // ---------------------------------------------------------------------------
 // PAGE MAIL — vue façon Outlook (lecture seule, pas de suppression possible)
 // ---------------------------------------------------------------------------
@@ -141,28 +158,25 @@ function renderMailPage() {
 
   return `
     <div class="mail-page">
-      <div class="pane mail-folders">
-        <div class="pane-header">Dossiers</div>
-        ${FOLDERS.map((f) => `
-          <div class="folder ${state.mail.folder === f.key ? "active" : ""}" data-mail-folder="${f.key}">
-            <span class="ico"><span class="status-dot" style="background:${f.dotColor}"></span></span>
-            <span class="label">${f.label}</span>
-            <span class="count">${mailsForFolder(f.key).length}</span>
-          </div>
-        `).join("")}
-        <div class="folder-note">
-          Vue de consultation uniquement : le tri et le classement sont réalisés par l'IA.
-          Les mails sont conservés 1 mois puis supprimés automatiquement de la boîte.
+      ${renderTabBar(
+        FOLDERS.map((f) => ({ key: f.key, label: f.label, dotColor: f.dotColor, count: mailsForFolder(f.key).length })),
+        state.mail.folder,
+        "mail-folder"
+      )}
+      <div class="folder-note">
+        Vue de consultation uniquement : le tri et le classement sont réalisés par l'IA.
+        Les mails sont conservés 1 mois puis supprimés automatiquement de la boîte.
+      </div>
+
+      <div class="mail-page-body">
+        <div class="pane mail-list">
+          <div class="pane-header">${list.length} message${list.length > 1 ? "s" : ""}</div>
+          ${list.map((m) => renderMailListItem(m)).join("")}
         </div>
-      </div>
 
-      <div class="pane mail-list">
-        <div class="pane-header">${list.length} message${list.length > 1 ? "s" : ""}</div>
-        ${list.map((m) => renderMailListItem(m)).join("")}
-      </div>
-
-      <div class="mail-reading">
-        ${selected ? renderMailReading(selected) : `<div class="empty"><span class="big-ico">📬</span>Sélectionnez un mail à consulter</div>`}
+        <div class="mail-reading">
+          ${selected ? renderMailReading(selected) : `<div class="empty"><span class="big-ico">📬</span>Sélectionnez un mail à consulter</div>`}
+        </div>
       </div>
     </div>
   `;
@@ -253,32 +267,29 @@ function renderValidationPage() {
 
   return `
     <div class="validation-page">
-      <div class="pane mail-folders">
-        <div class="pane-header">Dossiers</div>
-        ${VALIDATION_TABS.map((t) => `
-          <div class="folder ${state.validation.tab === t.key ? "active" : ""}" data-validation-tab="${t.key}">
-            <span class="ico"><span class="status-dot" style="background:${t.dotColor}"></span></span>
-            <span class="label">${t.label}</span>
-            <span class="count">${mailsForValidationTab(t.key).length}</span>
+      ${renderTabBar(
+        VALIDATION_TABS.map((t) => ({ key: t.key, label: t.label, dotColor: t.dotColor, count: mailsForValidationTab(t.key).length })),
+        state.validation.tab,
+        "validation-tab"
+      )}
+      <div class="folder-note">
+        Le tri par dossier reprend le statut du mail. Utilisez le tri par indice IA dans la liste pour prioriser les cas les moins fiables.
+      </div>
+
+      <div class="validation-page-body">
+        <div class="pane validation-list">
+          <div class="pane-header with-action">
+            <span>${items.length} mail${items.length > 1 ? "s" : ""} à valider</span>
+            <button class="btn subtle sort-toggle" data-toggle-sort>
+              Indice IA ${state.validation.sort === "asc" ? "↑ croissant" : "↓ décroissant"}
+            </button>
           </div>
-        `).join("")}
-        <div class="folder-note">
-          Le tri par dossier reprend le statut du mail. Utilisez le tri par indice IA dans la liste pour prioriser les cas les moins fiables.
+          ${items.map((m) => renderValidationListItem(m)).join("") || `<div class="small-muted" style="padding:16px">Aucun mail dans cette catégorie.</div>`}
         </div>
-      </div>
 
-      <div class="pane validation-list">
-        <div class="pane-header with-action">
-          <span>${items.length} mail${items.length > 1 ? "s" : ""} à valider</span>
-          <button class="btn subtle sort-toggle" data-toggle-sort>
-            Indice IA ${state.validation.sort === "asc" ? "↑ croissant" : "↓ décroissant"}
-          </button>
+        <div class="validation-detail">
+          ${selected ? renderValidationDetail(selected) : `<div class="empty"><span class="big-ico">✅</span>Sélectionnez un mail à valider</div>`}
         </div>
-        ${items.map((m) => renderValidationListItem(m)).join("") || `<div class="small-muted" style="padding:16px">Aucun mail dans cette catégorie.</div>`}
-      </div>
-
-      <div class="validation-detail">
-        ${selected ? renderValidationDetail(selected) : `<div class="empty"><span class="big-ico">✅</span>Sélectionnez un mail à valider</div>`}
       </div>
     </div>
   `;
@@ -635,9 +646,9 @@ function renderDetailHorsSujet(m) {
 // ---------------------------------------------------------------------------
 
 const SUIVI_TABS = [
-  { key: "en_cours", label: "En cours" },
-  { key: "nouveau", label: "Nouvelle NC" },
-  { key: "cloture", label: "Clôturé" },
+  { key: "en_cours", label: "En cours", dotColor: STATUT_COULEUR.en_cours.color },
+  { key: "nouveau", label: "Nouvelle NC", dotColor: STATUT_COULEUR.nouveau.color },
+  { key: "cloture", label: "Clôturé", dotColor: STATUT_COULEUR.cloture.color },
 ];
 
 function ncsForStatut(statut) {
@@ -652,13 +663,11 @@ function renderSuiviPage() {
   const ncs = ncsForStatut(state.suivi.tab).slice().sort((a, b) => new Date(b.dateDetection) - new Date(a.dateDetection));
   return `
     <div class="suivi-page">
-      <div class="suivi-tabs">
-        ${SUIVI_TABS.map((t) => `
-          <button class="${state.suivi.tab === t.key ? "active" : ""}" data-suivi-tab="${t.key}">
-            ${t.label} <span class="badge-count">${ncsForStatut(t.key).length}</span>
-          </button>
-        `).join("")}
-      </div>
+      ${renderTabBar(
+        SUIVI_TABS.map((t) => ({ key: t.key, label: t.label, dotColor: t.dotColor, count: ncsForStatut(t.key).length })),
+        state.suivi.tab,
+        "suivi-tab"
+      )}
       <div class="suivi-body">
         ${ncs.map((nc) => renderNcCard(nc)).join("") || `<div class="small-muted" style="padding:20px">Aucune NC dans cette catégorie.</div>`}
       </div>

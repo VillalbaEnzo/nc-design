@@ -186,42 +186,8 @@ html, body {
 
 /* ---------- MAIL PAGE (Outlook-like) ---------- */
 
-.mail-page { display: flex; width: 100%; }
-
-.mail-folders {
-  width: 210px;
-  flex-shrink: 0;
-  padding: 14px 0;
-}
-.mail-folders .folder {
-  padding: 8px 18px;
-  margin: 1px 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text);
-  transition: background .12s ease;
-}
-.mail-folders .folder .ico { flex-shrink: 0; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
-.mail-folders .folder .label { flex: 1; }
-.mail-folders .folder:hover { background: var(--hover); }
-.mail-folders .folder.active { background: var(--selected); font-weight: 700; color: var(--ink); }
-.mail-folders .folder .count { color: var(--text-faint); font-weight: 500; font-size: 11.5px; }
-.mail-folders .folder.active .count { color: var(--ink); }
-.mail-folders .folder-note {
-  margin: 14px 14px 4px;
-  padding: 10px 12px;
-  font-size: 11px;
-  line-height: 1.55;
-  color: var(--text-muted);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
+.mail-page { display: flex; flex-direction: column; width: 100%; overflow: hidden; }
+.mail-page-body { flex: 1; display: flex; overflow: hidden; }
 
 .mail-list {
   width: 370px;
@@ -281,7 +247,8 @@ html, body {
 
 /* ---------- VALIDATION PAGE ---------- */
 
-.validation-page { display: flex; width: 100%; }
+.validation-page { display: flex; flex-direction: column; width: 100%; overflow: hidden; }
+.validation-page-body { flex: 1; display: flex; overflow: hidden; }
 .validation-list { width: 380px; flex-shrink: 0; }
 
 .pane-header.with-action {
@@ -427,20 +394,34 @@ select.btn { font-weight: 500; }
   font-size: 13px; line-height: 1.6; margin-bottom: 18px; color: var(--text);
 }
 
+/* ---------- Barre d'onglets "Dossiers" (Mail, Validation, Suivi) ---------- */
+
+.folder-tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; overflow-x: auto; }
+.folder-tabs button {
+  background: transparent; border: none; padding: 10px 14px; font-size: 13.5px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; color: var(--text-muted); font-family: inherit; transition: color .12s ease;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.folder-tabs button:hover { color: var(--text); }
+.folder-tabs button.active { color: var(--text); font-weight: 700; border-bottom-color: var(--ink); }
+.folder-tabs button .badge-count {
+  background: var(--hover); color: var(--text-muted); border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 700;
+}
+.folder-tabs button.active .badge-count { background: var(--ink); color: #fff; }
+
+.folder-note {
+  padding: 9px 22px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
 /* ---------- SUIVI PAGE ---------- */
 
 .suivi-page { width: 100%; display: flex; flex-direction: column; }
-.suivi-tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid var(--border); background: var(--panel); }
-.suivi-tabs button {
-  background: transparent; border: none; padding: 10px 16px; font-size: 13.5px; font-weight: 500; cursor: pointer;
-  border-bottom: 2px solid transparent; color: var(--text-muted); font-family: inherit; transition: color .12s ease;
-}
-.suivi-tabs button:hover { color: var(--text); }
-.suivi-tabs button.active { color: var(--text); font-weight: 700; border-bottom-color: var(--ink); }
-.suivi-tabs button .badge-count {
-  background: var(--hover); color: var(--text-muted); border-radius: 4px; padding: 1px 7px; font-size: 11px; margin-left: 6px; font-weight: 700;
-}
-.suivi-tabs button.active .badge-count { background: var(--ink); color: #fff; }
 
 .suivi-body { flex: 1; overflow-y: auto; padding: 22px; display: flex; gap: 16px; flex-wrap: wrap; align-content: flex-start; }
 
