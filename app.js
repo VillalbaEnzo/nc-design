@@ -16,6 +16,7 @@ const state = {
     overrides: {}, // overrides[mailId] = badge forcé par l'utilisateur
     prefillOverrides: {}, // prefillOverrides[mailId] = { champ: valeur écrasée depuis une NC similaire }
     comparisonSelected: {}, // comparisonSelected[mailId] = id de la NC similaire affichée en comparaison
+    collapsed: {}, // collapsed[sectionKey] = true si la section est repliée
   },
   suivi: { tab: "en_cours", modalNc: null },
 };
@@ -302,6 +303,24 @@ function otherTypeOptions(current) {
   return Object.keys(BADGE_INFO).filter((k) => k !== current);
 }
 
+function isCollapsed(key) {
+  return !!state.validation.collapsed[key];
+}
+
+function collapsibleSection(key, title, innerHtml) {
+  const collapsed = isCollapsed(key);
+  return `
+    <div class="collapsible ${collapsed ? "is-collapsed" : ""}">
+      <button class="collapsible-toggle" data-toggle-collapse="${key}">
+        <span class="collapsible-arrow">▾</span> ${title}
+      </button>
+      <div class="collapsible-body">
+        <div class="card">${innerHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
 function overrideControls(mailId, current) {
   return `
     <select class="btn" data-override-select="${mailId}" style="cursor:pointer">
@@ -415,8 +434,7 @@ function renderDetailRattachement(m) {
 
     <div class="link-inline" data-open-nc="${nc.id}" style="display:inline-block;margin:4px 0 16px">📁 Ouvrir le dossier complet de ${nc.id} (historique des suivis)</div>
 
-    <div class="section-title">Fiche NC — ${nc.id} (identité, stable)</div>
-    <div class="card">
+    ${collapsibleSection(`rat-fiche-${m.id}`, `Fiche NC — ${nc.id} (identité, stable)`, `
       <div class="two-col">
         <div class="col">
           <div class="field"><label>Référence produit</label><input type="text" value="${nc.referenceProduit}" /></div>
@@ -429,10 +447,9 @@ function renderDetailRattachement(m) {
           <div class="field"><label>Date de détection</label><input type="text" value="${formatDateShort(nc.dateDetection)}" /></div>
         </div>
       </div>
-    </div>
+    `)}
 
-    <div class="section-title">Nouveau suivi proposé par l'IA (suivi ${last.version})</div>
-    <div class="card">
+    ${collapsibleSection(`rat-suivi-${m.id}`, `Nouveau suivi proposé par l'IA (suivi ${last.version})`, `
       <div class="two-col">
         <div class="col">
           <div class="field">
@@ -461,7 +478,7 @@ function renderDetailRattachement(m) {
           ${journalBlock("Action curative immédiate (historique)", journalHistory(nc, "actionCurativeImmediate"), last.version)}
         </div>
       </div>
-    </div>
+    `)}
   `;
 }
 
@@ -508,65 +525,68 @@ function renderDetailNouvelleNC(m) {
     ${overrideControls(m.id, "nouvelle_nc")}
   `;
 
+  const prefillCard = collapsibleSection(`nc-prefill-${m.id}`, "Pré-remplissage IA — nouvelle NC (modifiable)", `
+    <div class="field"><label>Numéro NC</label><input type="text" value="${prefill.numero || ""}" /></div>
+    ${FIELD_DEFS_NOUVELLE_NC.map((def) => `
+      <div class="field" data-prefill-field="${def.key}">
+        <label>${def.label}</label>
+        ${fieldInput(def, effective[def.key])}
+        ${overrides[def.key] ? `<div class="diff-hint">Écrasé depuis ${overrides[def.key].from} : « ${prefill[def.key] || "—"} »</div>` : ""}
+      </div>
+    `).join("")}
+  `);
+
+  const comparisonCard = comparisonNc ? collapsibleSection(
+    `nc-compare-${m.id}`,
+    `Comparaison — Pré-remplissage IA vs ${comparisonNc.id} (${comparisonNc.titre})`,
+    `
+      <div class="compare-table">
+        <div class="compare-row compare-head">
+          <div>Champ</div>
+          <div>Pré-remplissage IA</div>
+          <div></div>
+          <div>${comparisonNc.id}</div>
+        </div>
+        ${FIELD_DEFS_NOUVELLE_NC.map((def) => `
+          <div class="compare-row">
+            <div class="compare-label">${def.label}</div>
+            <div class="compare-value">${effective[def.key] ?? "—"}</div>
+            <div class="compare-arrow">
+              <button class="btn compare-arrow-btn" data-overwrite-field="${m.id}" data-overwrite-key="${def.key}" data-overwrite-similar="${comparisonNc.id}" title="Écraser la valeur IA avec celle de ${comparisonNc.id}">←</button>
+            </div>
+            <div class="compare-value compare-value-hist">${comparisonNc.champs[def.key] ?? "—"}</div>
+          </div>
+        `).join("")}
+      </div>
+    `
+  ) : "";
+
+  const top10Card = collapsibleSection(`nc-top10-${m.id}`, "Top 10 des NC similaires (historique)", `
+    <div class="small-muted" style="margin-bottom:10px">Cliquez sur une NC pour la comparer au pré-remplissage IA — jamais utilisée pour pré-remplir automatiquement la fiche.</div>
+    <div class="similar-list">
+      ${similaires.map((s) => `
+        <div class="similar-item ${comparisonId === s.id ? "selected" : ""}" data-similar-mail="${m.id}" data-similar-id="${s.id}">
+          <div><span class="id">${s.id}</span><span class="titre">${s.titre}</span></div>
+          <span class="similar-score">${s.score}%</span>
+        </div>
+      `).join("")}
+    </div>
+  `);
+
   return `
     ${detailHeader(m, "nouvelle_nc", actions)}
 
     <div class="two-col">
       <div class="col">
         ${mailMiniView(m)}
-
-        <div class="section-title">Pré-remplissage IA — nouvelle NC (modifiable)</div>
-        <div class="card">
-          <div class="field"><label>Numéro NC</label><input type="text" value="${prefill.numero || ""}" /></div>
-          ${FIELD_DEFS_NOUVELLE_NC.map((def) => `
-            <div class="field" data-prefill-field="${def.key}">
-              <label>${def.label}</label>
-              ${fieldInput(def, effective[def.key])}
-              ${overrides[def.key] ? `<div class="diff-hint">Écrasé depuis ${overrides[def.key].from} : « ${prefill[def.key] || "—"} »</div>` : ""}
-            </div>
-          `).join("")}
-        </div>
+        ${comparisonCard}
+        ${prefillCard}
       </div>
 
       <div class="col" style="max-width:360px">
-        <div class="section-title">Top 10 des NC similaires (historique)</div>
-        <div class="card">
-          <div class="small-muted" style="margin-bottom:10px">Cliquez sur une NC pour la comparer au pré-remplissage IA — jamais utilisée pour pré-remplir automatiquement la fiche.</div>
-          <div class="similar-list">
-            ${similaires.map((s) => `
-              <div class="similar-item ${comparisonId === s.id ? "selected" : ""}" data-similar-mail="${m.id}" data-similar-id="${s.id}">
-                <div><span class="id">${s.id}</span><span class="titre">${s.titre}</span></div>
-                <span class="similar-score">${s.score}%</span>
-              </div>
-            `).join("")}
-          </div>
-        </div>
+        ${top10Card}
       </div>
     </div>
-
-    ${comparisonNc ? `
-      <div class="section-title">Comparaison — Pré-remplissage IA vs ${comparisonNc.id} (${comparisonNc.titre})</div>
-      <div class="card">
-        <div class="compare-table">
-          <div class="compare-row compare-head">
-            <div>Champ</div>
-            <div>Pré-remplissage IA</div>
-            <div></div>
-            <div>${comparisonNc.id}</div>
-          </div>
-          ${FIELD_DEFS_NOUVELLE_NC.map((def) => `
-            <div class="compare-row">
-              <div class="compare-label">${def.label}</div>
-              <div class="compare-value">${effective[def.key] ?? "—"}</div>
-              <div class="compare-arrow">
-                <button class="btn compare-arrow-btn" data-overwrite-field="${m.id}" data-overwrite-key="${def.key}" data-overwrite-similar="${comparisonNc.id}" title="Écraser la valeur IA avec celle de ${comparisonNc.id}">←</button>
-              </div>
-              <div class="compare-value compare-value-hist">${comparisonNc.champs[def.key] ?? "—"}</div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    ` : ""}
   `;
 }
 
@@ -770,6 +790,14 @@ function attachHandlers() {
   $app.querySelectorAll("[data-toggle-sort]").forEach((el) =>
     el.addEventListener("click", () => {
       state.validation.sort = state.validation.sort === "asc" ? "desc" : "asc";
+      render();
+    })
+  );
+
+  $app.querySelectorAll("[data-toggle-collapse]").forEach((el) =>
+    el.addEventListener("click", () => {
+      const key = el.dataset.toggleCollapse;
+      state.validation.collapsed[key] = !state.validation.collapsed[key];
       render();
     })
   );
