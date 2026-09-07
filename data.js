@@ -338,40 +338,100 @@ Atelier Camping des Pins`,
 
 const HISTORIQUE_SIMILAIRES = {
   m2: [
-    { id: "NC2025-441", titre: "Rayure panneau HPL à réception", score: 94 },
-    { id: "NC2024-198", titre: "Rayure carrosserie module toboggan", score: 89 },
-    { id: "NC2025-312", titre: "Éclat peinture panneau, transport", score: 82 },
-    { id: "NC2023-076", titre: "Rayure profonde panneau de façade", score: 79 },
-    { id: "NC2025-503", titre: "Rayure superficielle toit de cabane", score: 74 },
-    { id: "NC2024-390", titre: "Choc léger panneau lors du déchargement", score: 71 },
-    { id: "NC2022-158", titre: "Rayure HPL due à un sanglage serré", score: 68 },
-    { id: "NC2025-021", titre: "Marque de frottement porte coulissante", score: 65 },
-    { id: "NC2024-266", titre: "Éraflure bas de structure", score: 61 },
-    { id: "NC2023-410", titre: "Rayure sur panneau arrière module", score: 58 },
+    { id: "NC2025-441", titre: "Rayure panneau HPL à réception", score: 94, champs: {
+      referenceProduit: "HPL-214", numeroCommande: "28810", client: "Aire de Jeux Vallée Verte", typeNC: "NCE", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2025-06-14",
+      cause: "Pièce endommagée", descriptionAnomalie: "Rayure de 12 cm sur panneau HPL constatée à la réception, avant assemblage.", action: "Renvoi pièces", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+    { id: "NC2024-198", titre: "Rayure carrosserie module toboggan", score: 89, champs: {
+      referenceProduit: "TOB-980", numeroCommande: "26510", client: "Commune de Pradelles", typeNC: "NCE", serviceImpacte: "Peinture", dateDetection: "2024-05-02",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Rayure profonde sur le fût du toboggan, visible dès le déballage.", action: "Refabrication", responsable: "Charlotte", niveauIndice: "Moyen" } },
+    { id: "NC2025-312", titre: "Éclat peinture panneau, transport", score: 82, champs: {
+      referenceProduit: "HPL-095", numeroCommande: "29120", client: "Camping Les Écureuils", typeNC: "NCF", serviceImpacte: "Transport", dateDetection: "2025-03-11",
+      cause: "Problème d'emballage", descriptionAnomalie: "Éclats de peinture sur un panneau, emballage insuffisant pour le transport.", action: "Réclamation au fournisseur", responsable: "Vincent", niveauIndice: "Mineur" } },
+    { id: "NC2023-076", titre: "Rayure profonde panneau de façade", score: 79, champs: {
+      referenceProduit: "HPL-050", numeroCommande: "24310", client: "Mairie de Vergonne", typeNC: "NCE", serviceImpacte: "Serrurerie", dateDetection: "2023-09-20",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Rayure profonde constatée après montage, origine incertaine.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Moyen" } },
+    { id: "NC2025-503", titre: "Rayure superficielle toit de cabane", score: 74, champs: {
+      referenceProduit: "CAB-330", numeroCommande: "29650", client: "Village Vacances Beaulieu", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2025-08-02",
+      cause: "Info client incorrecte", descriptionAnomalie: "Rayure superficielle signalée, finalement trace de feutre nettoyable.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+    { id: "NC2024-390", titre: "Choc léger panneau lors du déchargement", score: 71, champs: {
+      referenceProduit: "HPL-140", numeroCommande: "27200", client: "Récré Action Ouest", typeNC: "SAV", serviceImpacte: "Transport", dateDetection: "2024-10-05",
+      cause: "Manquants sur site", descriptionAnomalie: "Choc léger constaté sur un panneau lors du déchargement du camion.", action: "Devis", responsable: "David", niveauIndice: "Mineur" } },
+    { id: "NC2022-158", titre: "Rayure HPL due à un sanglage serré", score: 68, champs: {
+      referenceProduit: "HPL-012", numeroCommande: "21870", client: "Commune de Sainte-Row", typeNC: "NCI", serviceImpacte: "Expédition / Assemblage Sport", dateDetection: "2022-11-18",
+      cause: "Non respect des délais", descriptionAnomalie: "Marque de sanglage trop serré ayant rayé le panneau pendant le transport.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+    { id: "NC2025-021", titre: "Marque de frottement porte coulissante", score: 65, champs: {
+      referenceProduit: "CAB-410", numeroCommande: "28990", client: "Espace Détente Sud", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2025-01-09",
+      cause: "Info client incorrecte", descriptionAnomalie: "Marque de frottement signalée, usage normal de la porte coulissante.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+    { id: "NC2024-266", titre: "Éraflure bas de structure", score: 61, champs: {
+      referenceProduit: "STR-160", numeroCommande: "27510", client: "Récréa Loisirs SAS", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2024-07-22",
+      cause: "Rouille", descriptionAnomalie: "Éraflure en bas de structure ayant favorisé un point de rouille naissant.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2023-410", titre: "Rayure sur panneau arrière module", score: 58, champs: {
+      referenceProduit: "HPL-201", numeroCommande: "25430", client: "Groupe Cordelia Aménagement", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2023-12-01",
+      cause: "Pièce endommagée", descriptionAnomalie: "Rayure sur le panneau arrière constatée dès réception du lot fournisseur.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
   ],
   m7: [
-    { id: "NC2025-377", titre: "Grincement métallique portique à la mise en service", score: 91 },
-    { id: "NC2024-229", titre: "Cliquetis chaîne de balançoire", score: 84 },
-    { id: "NC2025-140", titre: "Bruit anormal axe de rotation manège", score: 77 },
-    { id: "NC2023-355", titre: "Grincement intermittent structure serrurerie", score: 73 },
-    { id: "NC2024-088", titre: "Vibration portique par grand vent", score: 69 },
-    { id: "NC2022-301", titre: "Sifflement toboggan tube métallique", score: 66 },
-    { id: "NC2025-459", titre: "Claquement fixation balançoire", score: 63 },
-    { id: "NC2024-512", titre: "Bruit anormal roulement tourniquet", score: 60 },
-    { id: "NC2023-199", titre: "Grincement portillon accès structure", score: 57 },
-    { id: "NC2021-233", titre: "Cliquetis chaîne portique", score: 54 },
+    { id: "NC2025-377", titre: "Grincement métallique portique à la mise en service", score: 91, champs: {
+      referenceProduit: "PORT-330", numeroCommande: "29010", client: "Commune de Vallonne", typeNC: "NCE", serviceImpacte: "Serrurerie", dateDetection: "2025-05-19",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Grincement métallique constant sur le portique, dès la mise en service.", action: "Réclamation au fournisseur", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2024-229", titre: "Cliquetis chaîne de balançoire", score: 84, champs: {
+      referenceProduit: "BAL-150", numeroCommande: "26980", client: "Espace Détente Nord", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2024-04-11",
+      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne dû à une fixation mal serrée.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2025-140", titre: "Bruit anormal axe de rotation manège", score: 77, champs: {
+      referenceProduit: "MAN-090", numeroCommande: "28510", client: "Village Vacances Les Tilleuls", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2025-02-24",
+      cause: "Erreur de conception", descriptionAnomalie: "Bruit anormal de l'axe de rotation, jeu mécanique trop important.", action: "Mise à jour conception", responsable: "BE Methode", niveauIndice: "Moyen" } },
+    { id: "NC2023-355", titre: "Grincement intermittent structure serrurerie", score: 73, champs: {
+      referenceProduit: "STR-410", numeroCommande: "24990", client: "Camping des Pins", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2023-08-30",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement intermittent selon la météo, jonctions métalliques à revoir.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2024-088", titre: "Vibration portique par grand vent", score: 69, champs: {
+      referenceProduit: "PORT-200", numeroCommande: "26120", client: "Mairie de Vallonne", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2024-01-15",
+      cause: "Info client incorrecte", descriptionAnomalie: "Vibration signalée par vent fort, comportement normal de la structure.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+    { id: "NC2022-301", titre: "Sifflement toboggan tube métallique", score: 66, champs: {
+      referenceProduit: "TOB-075", numeroCommande: "22340", client: "Récréa Loisirs SAS", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2022-06-08",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Sifflement du vent dans le tube métallique du toboggan, ébavurage insuffisant.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+    { id: "NC2025-459", titre: "Claquement fixation balançoire", score: 63, champs: {
+      referenceProduit: "BAL-260", numeroCommande: "29380", client: "Groupe Cordelia Aménagement", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2025-07-02",
+      cause: "Manquants en visserie", descriptionAnomalie: "Claquement au niveau de la fixation haute de la balançoire.", action: "Achat matériel", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2024-512", titre: "Bruit anormal roulement tourniquet", score: 60, champs: {
+      referenceProduit: "TRN-045", numeroCommande: "27860", client: "Village Vacances Beaulieu", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2024-11-27",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Bruit de roulement anormal sur le tourniquet, graissage insuffisant en sortie d'atelier.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+    { id: "NC2023-199", titre: "Grincement portillon accès structure", score: 57, champs: {
+      referenceProduit: "PORT-118", numeroCommande: "24010", client: "Espace Détente Nord", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2023-05-14",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement du portillon d'accès, charnières à régler.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+    { id: "NC2021-233", titre: "Cliquetis chaîne portique", score: 54, champs: {
+      referenceProduit: "PORT-060", numeroCommande: "19870", client: "Commune de Sainte-Row", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2021-09-09",
+      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne sur portique, resserrage nécessaire.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
   ],
   m11: [
-    { id: "NC2024-347", titre: "Odeur plastique module rotomoulé neuf", score: 87 },
-    { id: "NC2023-288", titre: "Odeur forte cabane exposée au soleil", score: 75 },
-    { id: "NC2025-062", titre: "Odeur persistante toboggan plastique", score: 70 },
-    { id: "NC2022-411", titre: "Odeur matière neuve module de jeu", score: 66 },
-    { id: "NC2024-190", titre: "Odeur résine structure composite", score: 62 },
-    { id: "NC2023-097", titre: "Odeur colle assemblage panneau", score: 59 },
-    { id: "NC2025-233", titre: "Odeur caoutchouc revêtement sol souple", score: 55 },
-    { id: "NC2021-176", titre: "Odeur persistante bac à sable plastique", score: 52 },
-    { id: "NC2024-405", titre: "Odeur électrique éclairage structure", score: 49 },
-    { id: "NC2022-064", titre: "Odeur plastique fondu élément toboggan", score: 46 },
+    { id: "NC2024-347", titre: "Odeur plastique module rotomoulé neuf", score: 87, champs: {
+      referenceProduit: "CAB-310", numeroCommande: "26640", client: "Récréa Loisirs SAS", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2024-06-21",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique marquée sur un module rotomoulé neuf, atténuée après 3 semaines.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+    { id: "NC2023-288", titre: "Odeur forte cabane exposée au soleil", score: 75, champs: {
+      referenceProduit: "CAB-220", numeroCommande: "24780", client: "Camping des Pins", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2023-07-30",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur forte en plein soleil, dissipée après aération, non lié à un défaut matière.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+    { id: "NC2025-062", titre: "Odeur persistante toboggan plastique", score: 70, champs: {
+      referenceProduit: "TOB-410", numeroCommande: "28150", client: "Village Vacances Les Tilleuls", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2025-01-28",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur persistante sur toboggan plastique, matière première suspectée.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+    { id: "NC2022-411", titre: "Odeur matière neuve module de jeu", score: 66, champs: {
+      referenceProduit: "STR-330", numeroCommande: "22980", client: "Mairie de Vallonne", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2022-10-14",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de matière neuve normale, dissipée après une semaine d'utilisation.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+    { id: "NC2024-190", titre: "Odeur résine structure composite", score: 62, champs: {
+      referenceProduit: "STR-280", numeroCommande: "26410", client: "Commune de Pradelles", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2024-03-08",
+      cause: "Erreur de conception", descriptionAnomalie: "Odeur de résine sur structure composite, formulation à revoir avec le fournisseur.", action: "Mise à jour conception", responsable: "BE Methode", niveauIndice: "Moyen" } },
+    { id: "NC2023-097", titre: "Odeur colle assemblage panneau", score: 59, champs: {
+      referenceProduit: "HPL-160", numeroCommande: "23640", client: "Espace Détente Sud", typeNC: "NCI", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2023-02-19",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de colle sur panneau assemblé, séchage insuffisant avant expédition.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+    { id: "NC2025-233", titre: "Odeur caoutchouc revêtement sol souple", score: 55, champs: {
+      referenceProduit: "SOL-090", numeroCommande: "29240", client: "Groupe Cordelia Aménagement", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2025-04-03",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de caoutchouc marquée sur le revêtement de sol souple livré.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+    { id: "NC2021-176", titre: "Odeur persistante bac à sable plastique", score: 52, champs: {
+      referenceProduit: "BAC-040", numeroCommande: "20110", client: "Camping Les Écureuils", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2021-06-25",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de plastique neuf sur bac à sable, dissipée naturellement.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+    { id: "NC2024-405", titre: "Odeur électrique éclairage structure", score: 49, champs: {
+      referenceProduit: "ECL-015", numeroCommande: "27340", client: "Récré Action Ouest", typeNC: "SAV", serviceImpacte: "Fournisseur", dateDetection: "2024-09-16",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Légère odeur électrique au niveau du bloc d'éclairage, composant à remplacer.", action: "Renvoi pièces", responsable: "Achats / Appro", niveauIndice: "Moyen" } },
+    { id: "NC2022-064", titre: "Odeur plastique fondu élément toboggan", score: 46, champs: {
+      referenceProduit: "TOB-020", numeroCommande: "21430", client: "Village Vacances Beaulieu", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2022-02-11",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique fondu sur un élément, défaut de moulage suspecté.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
   ],
 };
 
