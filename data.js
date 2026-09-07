@@ -39,17 +39,17 @@ const RESPONSABLES = ["Pierre", "Charlotte", "Matthieu", "Laurent", "Dominique",
 const NIVEAUX_INDICE = ["Aucun", "Mineur", "Moyen", "Majeur"];
 
 const STATUT_COULEUR = {
-  en_cours: { label: "En cours", color: "#c62828", bg: "#fdecea" },
-  nouveau: { label: "Nouveau", color: "#1565c0", bg: "#e8f1fc" },
-  cloture: { label: "Clôturé", color: "#2e7d32", bg: "#eaf6ec" },
-  hors_sujet: { label: "Hors sujet / Transféré", color: "#212121", bg: "#ececec" },
+  en_cours: { label: "En cours", color: "#a3362b", bg: "#fbeeec" },
+  nouveau: { label: "Nouveau", color: "#33538f", bg: "#eef1f7" },
+  cloture: { label: "Clôturé", color: "#3f7d52", bg: "#edf5ef" },
+  hors_sujet: { label: "Hors sujet / Transféré", color: "#44474c", bg: "#eeeeef" },
 };
 
 const BADGE_INFO = {
-  rattachement: { label: "Rattachement NC existante", color: "#5e35b1", bg: "#efe9fb" },
-  nouvelle_nc: { label: "Nouvelle NC", color: "#00695c", bg: "#e3f4f2" },
-  non_recevable: { label: "Non recevable", color: "#ef6c00", bg: "#fdf1e3" },
-  hors_sujet: { label: "Hors sujet / Transfert", color: "#424242", bg: "#eeeeee" },
+  rattachement: { label: "Rattachement NC existante", color: "#5a5a9e", bg: "#eeeefa" },
+  nouvelle_nc: { label: "Nouvelle NC", color: "#2f6f63", bg: "#e9f3f0" },
+  non_recevable: { label: "Non recevable", color: "#93611a", bg: "#faf1e2" },
+  hors_sujet: { label: "Hors sujet / Transfert", color: "#54575c", bg: "#eeeeef" },
 };
 
 // ---- Pièces jointes fictives -----------------------------------------------

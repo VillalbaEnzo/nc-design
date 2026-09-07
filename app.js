@@ -48,7 +48,7 @@ function chipMissingVerif() {
 }
 
 function confidenceMeter(value) {
-  const color = value >= 85 ? "#2e7d32" : value >= 65 ? "#ef6c00" : "#c62828";
+  const color = value >= 85 ? "#3f7d52" : value >= 65 ? "#93611a" : "#a3362b";
   return `<span class="confidence">
       <span class="confidence-bar"><span style="width:${value}%;background:${color}"></span></span>
       Indice IA : ${value}%
@@ -123,11 +123,11 @@ function navBtn(key, label) {
 // ---------------------------------------------------------------------------
 
 const FOLDERS = [
-  { key: "inbox", label: "Boîte de réception qualité", ico: "📥" },
-  { key: "en_cours", label: "En cours", ico: "🔴" },
-  { key: "nouveau", label: "Nouveaux", ico: "🔵" },
-  { key: "cloture", label: "Clôturés", ico: "🟢" },
-  { key: "hors_sujet", label: "Hors sujet / Transférés", ico: "⚪" },
+  { key: "inbox", label: "Boîte de réception qualité", dotColor: "var(--text-faint)" },
+  { key: "en_cours", label: "En cours", dotColor: STATUT_COULEUR.en_cours.color },
+  { key: "nouveau", label: "Nouveaux", dotColor: STATUT_COULEUR.nouveau.color },
+  { key: "cloture", label: "Clôturés", dotColor: STATUT_COULEUR.cloture.color },
+  { key: "hors_sujet", label: "Hors sujet / Transférés", dotColor: STATUT_COULEUR.hors_sujet.color },
 ];
 
 function mailsForFolder(folder) {
@@ -145,7 +145,7 @@ function renderMailPage() {
         <div class="pane-header">Dossiers</div>
         ${FOLDERS.map((f) => `
           <div class="folder ${state.mail.folder === f.key ? "active" : ""}" data-mail-folder="${f.key}">
-            <span class="ico">${f.ico}</span>
+            <span class="ico"><span class="status-dot" style="background:${f.dotColor}"></span></span>
             <span class="label">${f.label}</span>
             <span class="count">${mailsForFolder(f.key).length}</span>
           </div>
@@ -208,7 +208,7 @@ function renderMailReading(m) {
         ${chipBadge(m.badge)}
         ${confidenceMeter(m.aiConfidence)}
         ${!m.humanVerified ? chipMissingVerif() : ""}
-        ${m.ncId ? `<span class="chip" style="background:#eee;color:#333">Rattaché à ${m.ncId}</span>` : ""}
+        ${m.ncId ? `<span class="chip" style="background:var(--hover);color:var(--text-muted)">Rattaché à ${m.ncId}</span>` : ""}
       </div>
       </div>
     </div>
@@ -228,10 +228,10 @@ function renderMailReading(m) {
 // ---------------------------------------------------------------------------
 
 const VALIDATION_TABS = [
-  { key: "en_cours", label: "En cours", ico: "🔴" },
-  { key: "nouveau", label: "Nouveaux", ico: "🔵" },
-  { key: "cloture", label: "Clôturés", ico: "🟢" },
-  { key: "hors_sujet", label: "Hors sujet / Transfert", ico: "⚪" },
+  { key: "en_cours", label: "En cours", dotColor: STATUT_COULEUR.en_cours.color },
+  { key: "nouveau", label: "Nouveaux", dotColor: STATUT_COULEUR.nouveau.color },
+  { key: "cloture", label: "Clôturés", dotColor: STATUT_COULEUR.cloture.color },
+  { key: "hors_sujet", label: "Hors sujet / Transfert", dotColor: STATUT_COULEUR.hors_sujet.color },
 ];
 
 function mailsForValidationTab(tab) {
@@ -257,7 +257,7 @@ function renderValidationPage() {
         <div class="pane-header">Dossiers</div>
         ${VALIDATION_TABS.map((t) => `
           <div class="folder ${state.validation.tab === t.key ? "active" : ""}" data-validation-tab="${t.key}">
-            <span class="ico">${t.ico}</span>
+            <span class="ico"><span class="status-dot" style="background:${t.dotColor}"></span></span>
             <span class="label">${t.label}</span>
             <span class="count">${mailsForValidationTab(t.key).length}</span>
           </div>
