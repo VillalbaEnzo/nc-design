@@ -75,7 +75,7 @@ function toast(msg) {
     el = document.createElement("div");
     el.id = "toast";
     el.style.cssText =
-      "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#242424;color:#fff;" +
+      "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0a0a0a;color:#fff;" +
       "padding:10px 18px;border-radius:6px;font-size:13px;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:opacity .15s;";
     document.body.appendChild(el);
   }
@@ -385,7 +385,7 @@ function journalBlock(label, entries, latestVersion) {
           <div class="journal-entry ${e.version === latestVersion ? "is-new" : ""}">
             <div class="journal-entry-head">
               <span class="journal-date">${formatDateShort(e.date)}${e.mailId ? " · via mail" : " · ouverture"}</span>
-              ${e.version === latestVersion ? `<span class="chip" style="background:#e3f4f2;color:#00695c">Nouveau — proposé par l'IA</span>` : ""}
+              ${e.version === latestVersion ? `<span class="chip mono">Nouveau — proposé par l'IA</span>` : ""}
             </div>
             ${e.version === latestVersion
               ? `<textarea rows="3">${e.text}</textarea>`
