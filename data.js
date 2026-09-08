@@ -563,6 +563,8 @@ const NCS = {
     origine: "Client",
     origineAuto: true,
     dateDetection: "2026-08-18",
+    dateDemande: null,
+    datePrevue: null,
     statut: "en_cours",
     dateCloture: null,
     responsableCommercial: "Charlotte",
@@ -617,6 +619,8 @@ const NCS = {
     origine: "Client",
     origineAuto: true,
     dateDetection: "2026-08-15",
+    dateDemande: null,
+    datePrevue: null,
     statut: "en_cours",
     dateCloture: null,
     responsableCommercial: "Matthieu",
@@ -660,6 +664,8 @@ const NCS = {
     origine: "Interne",
     origineAuto: false,
     dateDetection: "2026-07-18",
+    dateDemande: null,
+    datePrevue: null,
     statut: "en_cours",
     dateCloture: null,
     responsableCommercial: null,
@@ -692,6 +698,8 @@ const NCS = {
     origine: "Client",
     origineAuto: true,
     dateDetection: "2026-08-27",
+    dateDemande: null,
+    datePrevue: null,
     statut: "nouveau",
     dateCloture: null,
     responsableCommercial: "Vincent",
@@ -724,6 +732,8 @@ const NCS = {
     origine: "Fournisseur",
     origineAuto: true,
     dateDetection: "2026-08-25",
+    dateDemande: null,
+    datePrevue: null,
     statut: "nouveau",
     dateCloture: null,
     responsableCommercial: "Dominique",
@@ -756,6 +766,8 @@ const NCS = {
     origine: "Client",
     origineAuto: true,
     dateDetection: "2026-08-05",
+    dateDemande: null,
+    datePrevue: null,
     statut: "cloture",
     dateCloture: "2026-08-28",
     responsableCommercial: "Laurent",
@@ -799,6 +811,8 @@ const NCS = {
     origine: "Interne",
     origineAuto: false,
     dateDetection: "2026-08-10",
+    dateDemande: null,
+    datePrevue: null,
     statut: "cloture",
     dateCloture: "2026-08-26",
     responsableCommercial: "Nadia",
@@ -842,6 +856,8 @@ const NCS = {
     origine: "Fournisseur",
     origineAuto: true,
     dateDetection: "2026-07-02",
+    dateDemande: "2026-07-03",
+    datePrevue: "2026-07-18",
     statut: "cloture",
     dateCloture: "2026-07-20",
     responsableCommercial: "Vincent",
@@ -942,3 +958,28 @@ const STATS_PART_COUT_RENSEIGNE = 38; // % de NC avec un coût réellement non n
 
 const STATS_NC_URGENTES = ["NC2026-341", "NC2026-352"];
 const STATS_NC_ATTENTE_VALIDATION = ["m2", "m11", "m7"];
+
+// ---- Rapport de synchronisation Excel (PLAN_TECHNIQUE.md §7) ---------------
+// Journal du job hebdomadaire, sens unique application → Excel : uniquement
+// les NC/versions vérifiées par le vérificateur, et les clôtures. Sert de
+// filet de sécurité consultable en cas de problème côté application.
+const SYNC_REPORTS = [
+  {
+    date: "2026-09-07",
+    lignesPoussees: 14,
+    echecs: 0,
+    details: "Mises à jour de suivi : 11 · Clôtures : 3",
+  },
+  {
+    date: "2026-08-31",
+    lignesPoussees: 9,
+    echecs: 1,
+    details: "Mises à jour de suivi : 8 · Clôtures : 1 · 1 échec : NC2026-330 (classeur Excel ouvert par un utilisateur, ligne verrouillée)",
+  },
+  {
+    date: "2026-08-24",
+    lignesPoussees: 12,
+    echecs: 0,
+    details: "Mises à jour de suivi : 10 · Clôtures : 2",
+  },
+];

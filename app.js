@@ -21,7 +21,7 @@ const state = {
     changingNc: {}, // changingNc[mailId] = true si le sélecteur "changer la NC rattachée" est ouvert
   },
   suivi: { tab: "en_cours", modalNc: null, dicteeOpen: false, dictee: { ncId: "", transcript: "", genere: false } },
-  stats: { periode: "6m", service: "", cause: "" },
+  stats: { periode: "6m", service: "", cause: "", statut: "", type: "", gravite: "", origine: "", recherche: "" },
   admin: { activeList: "Type de NC", newValue: "", newFieldName: "", newFieldType: "texte", confirm: null },
 };
 
@@ -39,6 +39,14 @@ function formatDate(iso) {
 function formatDateShort(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
+// "Date de la demande" et "Date prévue" — champs réels de l'Excel mais très
+// rarement remplis (1,4 % chacun, voir VISION_APP_FINALE.md, "Champs peu ou
+// jamais renseignés en pratique") : à distinguer explicitement d'une case
+// vide, même logique que les coûts non renseignés.
+function formatDateField(iso) {
+  return iso ? formatDateShort(iso) : `<span class="non-renseigne">non renseigné</span>`;
 }
 
 function chipBadge(badgeKey) {
@@ -544,6 +552,8 @@ function renderDetailRattachement(m) {
         <div class="k">Type de NC</div><div>${nc.typeNC}</div>
         <div class="k">Service impacté</div><div>${nc.serviceImpacte}</div>
         <div class="k">Date de détection</div><div>${formatDateShort(nc.dateDetection)}</div>
+        <div class="k">Date de la demande</div><div>${formatDateField(nc.dateDemande)}</div>
+        <div class="k">Date prévue</div><div>${formatDateField(nc.datePrevue)}</div>
       </div>
     `)}
 
@@ -594,6 +604,8 @@ const FIELD_DEFS_NOUVELLE_NC = [
   { key: "origine", label: "Origine (Client / Fournisseur / Interne)", type: "select", options: ORIGINES, auto: true },
   { key: "serviceImpacte", label: "Service impacté", type: "select", options: SERVICES_IMPACTES },
   { key: "dateDetection", label: "Date de détection", type: "date" },
+  { key: "dateDemande", label: "Date de la demande", type: "date" },
+  { key: "datePrevue", label: "Date prévue", type: "date" },
   { key: "cause", label: "Cause", type: "select", options: CAUSES },
   { key: "action", label: "Action", type: "select", options: ACTIONS },
   { key: "responsableCommercial", label: "Responsable commercial", type: "select", options: RESPONSABLES_COMMERCIAUX },
@@ -911,7 +923,15 @@ function ficheCompleteCard(nc) {
     <div class="card">
       <h3>Fiche NC — suivi ${last.version}</h3>
 
-      <div class="section-title" style="margin-top:0">Indice de gravité</div>
+      <div class="section-title" style="margin-top:0">Dates</div>
+      <div class="kv">
+        <div class="k">Date de détection</div><div>${formatDateShort(nc.dateDetection)}</div>
+        <div class="k">Date de la demande</div><div>${formatDateField(nc.dateDemande)}</div>
+        <div class="k">Date prévue</div><div>${formatDateField(nc.datePrevue)}</div>
+        <div class="k">Date clôture réelle</div><div>${formatDateField(nc.dateCloture)}</div>
+      </div>
+
+      <div class="section-title">Indice de gravité</div>
       ${graviteBlock(nc)}
 
       <div class="section-title">Coûts et responsables</div>
@@ -1029,6 +1049,27 @@ function renderStatsPage() {
         <div class="field" style="margin:0"><label>Cause</label>
           <select data-stats-filter="cause"><option value="">Toutes</option>${CAUSES.map((c) => `<option ${state.stats.cause === c ? "selected" : ""}>${c}</option>`).join("")}</select>
         </div>
+        <div class="field" style="margin:0"><label>Statut</label>
+          <select data-stats-filter="statut">
+            <option value="">Tous</option>
+            <option value="nouveau" ${state.stats.statut === "nouveau" ? "selected" : ""}>Nouveau</option>
+            <option value="en_cours" ${state.stats.statut === "en_cours" ? "selected" : ""}>En cours</option>
+            <option value="cloture" ${state.stats.statut === "cloture" ? "selected" : ""}>Clôturé</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0"><label>Type de NC</label>
+          <select data-stats-filter="type"><option value="">Tous</option>${TYPES_NC.map((t) => `<option ${state.stats.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
+        </div>
+        <div class="field" style="margin:0"><label>Gravité</label>
+          <select data-stats-filter="gravite"><option value="">Toutes</option>${NIVEAUX_INDICE.map((n) => `<option ${state.stats.gravite === n ? "selected" : ""}>${n}</option>`).join("")}</select>
+        </div>
+        <div class="field" style="margin:0"><label>Origine</label>
+          <select data-stats-filter="origine"><option value="">Toutes</option>${ORIGINES.map((o) => `<option ${state.stats.origine === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:200px">
+          <label>Recherche texte</label>
+          <input type="text" data-stats-search value="${state.stats.recherche}" placeholder="Réf. produit, client, mot-clé…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px" />
+        </div>
         <button class="btn" data-stats-export style="margin-left:auto">⬇ Export Excel (filtres appliqués)</button>
       </div>
 
@@ -1091,8 +1132,32 @@ function renderStatsPage() {
 // l'application, voir VISION_APP_FINALE.md, section "Rôles / accès")
 // ---------------------------------------------------------------------------
 
+function renderSyncReportView() {
+  return `
+    <div class="card">
+      <h3>Rapport de synchronisation Excel</h3>
+      <div class="note-box">
+        Sens unique, hebdomadaire, application → Excel : ce journal trace chaque exécution
+        (lignes poussées, échecs éventuels) — un filet de sécurité consultable si un problème
+        survient côté application (voir PLAN_TECHNIQUE.md §7).
+      </div>
+      <div class="sync-report-list">
+        ${SYNC_REPORTS.map((r) => `
+          <div class="sync-report-row ${r.echecs > 0 ? "has-error" : ""}">
+            <div class="sync-report-date">${formatDateShort(r.date)}</div>
+            <div class="sync-report-count">${r.lignesPoussees} lignes poussées</div>
+            <div class="sync-report-count ${r.echecs > 0 ? "error" : "ok"}">${r.echecs} échec${r.echecs > 1 ? "s" : ""}</div>
+            <div class="sync-report-details">${r.details}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderAdminPage() {
   const listNames = Object.keys(REF_LISTS);
+  const onSync = state.admin.activeList === "__sync__";
   const active = REF_LISTS[state.admin.activeList];
   return `
     <div class="admin-page">
@@ -1107,9 +1172,14 @@ function renderAdminPage() {
           `).join("")}
           <div class="pane-header" style="margin-top:8px">Champs personnalisés</div>
           <div style="padding:10px 16px" class="small-muted">${CHAMPS_PERSONNALISES.length} champ(s) créé(s)</div>
+          <div class="pane-header" style="margin-top:8px">Synchronisation</div>
+          <div class="admin-list-item ${onSync ? "selected" : ""}" data-admin-list="__sync__">
+            🔄 Rapport de synchronisation Excel
+          </div>
         </div>
 
         <div class="admin-detail">
+          ${onSync ? renderSyncReportView() : `
           <div class="card">
             <h3>${state.admin.activeList}</h3>
             <div class="admin-values">
@@ -1163,6 +1233,7 @@ function renderAdminPage() {
               `).join("")}
             </div>
           </div>
+          `}
         </div>
       </div>
     </div>
@@ -1328,6 +1399,9 @@ function attachHandlers() {
   // ---- Statistiques ----
   $app.querySelectorAll("[data-stats-filter]").forEach((el) =>
     el.addEventListener("change", () => { state.stats[el.dataset.statsFilter] = el.value; render(); })
+  );
+  $app.querySelectorAll("[data-stats-search]").forEach((el) =>
+    el.addEventListener("input", () => { state.stats.recherche = el.value; })
   );
   $app.querySelectorAll("[data-stats-export]").forEach((el) =>
     el.addEventListener("click", () => toast("Export Excel généré avec les filtres actuels (simulation)"))
