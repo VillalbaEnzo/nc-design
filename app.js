@@ -21,8 +21,9 @@ const state = {
     changingNc: {}, // changingNc[mailId] = true si le sélecteur "changer la NC rattachée" est ouvert
   },
   suivi: { tab: "en_cours", modalNc: null, dicteeOpen: false, dictee: { ncId: "", transcript: "", genere: false } },
-  stats: { periode: "6m", service: "", cause: "", statut: "", type: "", gravite: "", origine: "", recherche: "" },
-  admin: { activeList: "Type de NC", newValue: "", newFieldName: "", newFieldType: "texte", confirm: null },
+  commandeDetailOpen: {}, // commandeDetailOpen[numeroCommande] = true si le détail référentiel est déplié (consultatif, voir VISION_APP_FINALE.md "Référentiel Commandes")
+  stats: { periode: "6m", service: "", cause: "", statut: "", type: "", gravite: "", recherche: "" },
+  admin: { activeList: "Type de NC", newValue: "", newFieldName: "", newFieldType: "texte", confirm: null, graviteDraft: {} },
 };
 
 const $app = document.getElementById("app");
@@ -74,16 +75,16 @@ function statusDot(statusKey) {
 
 function getMail(id) { return MAILS.find((m) => m.id === id); }
 
-// Pièces jointes visuelles (photos/vidéos/audios) : point ouvert non tranché
-// (PLAN_TECHNIQUE.md §5 / §13 pt.1) — stockage + affichage seul, pas
-// d'extraction de contenu pour ce format à ce stade.
+// Pièces jointes visuelles (photos/vidéos/audios) : décidé (voir
+// VISION_APP_FINALE.md, "Pièces jointes") — stockage + affichage seul, pas
+// d'OCR ni de description par IA multimodale pour ce format.
 const VISUAL_EXT = [".jpg", ".jpeg", ".png", ".mp4", ".mov", ".mp3", ".wav"];
 function isVisualAttachment(name) {
   return VISUAL_EXT.some((ext) => name.toLowerCase().endsWith(ext));
 }
 function attachmentNote(attachments) {
   if (!attachments.some((a) => isVisualAttachment(a.name))) return "";
-  return `<div class="visual-note">🖼 Pièce(s) jointe(s) visuelle(s) : stockées et affichées, mais leur contenu n'est pas extrait automatiquement (point ouvert — voir PLAN_TECHNIQUE.md §13).</div>`;
+  return `<div class="visual-note">🖼 Pièce(s) jointe(s) visuelle(s) : stockées et affichées, mais leur contenu n'est pas extrait automatiquement (décidé — pas d'OCR ni de description IA sur ce format).</div>`;
 }
 
 function initials(name) {
@@ -481,6 +482,57 @@ function coutsBlock(nc) {
   `;
 }
 
+// --- Référentiel Commandes ---------------------------------------------------
+// Voir VISION_APP_FINALE.md, "Référentiel Commandes — vérification et
+// complément d'information". Usage 2 (consultatif) : bouton à côté du champ
+// "N° Commande concernée" pour afficher le détail (sol, couleur...) sans
+// changer d'outil — n'alimente jamais automatiquement un champ de la NC.
+
+function numeroCommandeRow(numeroCommande) {
+  const open = !!state.commandeDetailOpen[numeroCommande];
+  const cmd = REFERENTIEL_COMMANDES[numeroCommande];
+  return `
+    <div class="k">N° Commande concernée</div>
+    <div>
+      ${numeroCommande}
+      <button class="link-inline" data-toggle-commande="${numeroCommande}" style="margin-left:8px">
+        📦 ${open ? "Masquer le détail commande" : "Voir le détail commande"}
+      </button>
+      ${open ? commandeDetailPanel(cmd) : ""}
+    </div>
+  `;
+}
+
+function commandeDetailPanel(cmd) {
+  if (!cmd) {
+    return `<div class="note-box" style="margin-top:6px">Commande introuvable dans le référentiel (export hebdomadaire) — à vérifier manuellement.</div>`;
+  }
+  return `
+    <div class="mail-mini" style="margin:6px 0 0;padding:10px 12px">
+      <div class="kv" style="grid-template-columns:110px 1fr">
+        <div class="k">Client (référentiel)</div><div>${cmd.client}</div>
+        <div class="k">Responsable co.</div><div>${cmd.responsableCommercial}</div>
+        <div class="k">Semaine commande</div><div>${cmd.semaine}</div>
+        <div class="k">Export estimé</div><div>${formatDateShort(cmd.dateExportEstimee)}</div>
+        <div class="k">Prix</div><div>${cmd.prix}</div>
+        <div class="k">Sol</div><div>${cmd.sol}</div>
+        <div class="k">Couleur</div><div>${cmd.couleur}</div>
+        <div class="k">Contenu</div><div>${cmd.contenu}</div>
+      </div>
+      <div class="small-muted" style="margin-top:6px">Consultatif uniquement — n'alimente aucun champ de la NC automatiquement.</div>
+    </div>
+  `;
+}
+
+// Aide à la vérification (usage 1) : signal d'écart entre la valeur saisie
+// sur la NC et la commande officielle du référentiel — jamais une correction
+// silencieuse, la validation humaine reste systématique.
+function commandeEcartNote(nc) {
+  const cmd = REFERENTIEL_COMMANDES[nc.numeroCommande];
+  if (!cmd || cmd.client === nc.client) return "";
+  return `<div class="note-box">⚠ Écart détecté avec le référentiel Commandes : la commande n°${nc.numeroCommande} est enregistrée au nom de « ${cmd.client} », pas « ${nc.client} ». Signal informatif — à vérifier avant validation.</div>`;
+}
+
 // --- Cas 1 : Rattachement à une NC existante --------------------------------
 
 function renderDetailRattachement(m) {
@@ -536,6 +588,7 @@ function renderDetailRattachement(m) {
     ${detailHeader(m, "rattachement", actions)}
 
     <div class="note-box">${rattachementNote} Tous les champs du nouveau suivi ci-dessous sont modifiables, pas seulement ceux proposés par l'IA.</div>
+    ${commandeEcartNote(nc)}
 
     ${mailMiniView(m)}
 
@@ -546,10 +599,8 @@ function renderDetailRattachement(m) {
     ${collapsibleSection(`rat-fiche-${m.id}`, `Fiche NC — ${nc.id} (identité, non modifiable)`, `
       <div class="kv">
         <div class="k">Référence produit</div><div>${nc.referenceProduit}</div>
-        <div class="k">N° Commande</div><div>${nc.numeroCommande}</div>
-        <div class="k">Client</div><div>${nc.client}</div>
-        <div class="k">Origine du signalement</div><div>${nc.origine || "—"}${nc.origineAuto ? ` <span class="small-muted">(déterminée automatiquement)</span>` : ""}</div>
-        <div class="k">Type de NC</div><div>${nc.typeNC}</div>
+        ${numeroCommandeRow(nc.numeroCommande)}
+        <div class="k">Client / fournisseur / interne</div><div>${nc.client}</div>
         <div class="k">Service impacté</div><div>${nc.serviceImpacte}</div>
         <div class="k">Date de détection</div><div>${formatDateShort(nc.dateDetection)}</div>
         <div class="k">Date de la demande</div><div>${formatDateField(nc.dateDemande)}</div>
@@ -560,9 +611,11 @@ function renderDetailRattachement(m) {
     ${collapsibleSection(`rat-suivi-${m.id}`, `Nouveau suivi — suivi ${last.version} (tous les champs sont modifiables)`, `
       <div class="two-col">
         <div class="col">
+          <div class="field"><label>Type de NC</label><select>${TYPES_NC.map((t) => `<option ${t === last.champs.typeNC ? "selected" : ""}>${t}</option>`).join("")}</select>
+            <div class="small-muted" style="margin-top:4px">Peut être positionné à « Non recevable » si ce suivi révèle qu'il n'y a en fait pas de non-conformité — la NC reste tracée, seul son type change (voir « 3. Non recevable »).</div>
+          </div>
           <div class="field"><label>Cause</label><select>${CAUSES.map((c) => `<option ${c === last.champs.cause ? "selected" : ""}>${c}</option>`).join("")}</select></div>
           <div class="field"><label>Action</label><select>${ACTIONS.map((a) => `<option ${a === last.champs.action ? "selected" : ""}>${a}</option>`).join("")}</select></div>
-          <div class="field"><label>Responsable</label><select>${RESPONSABLES.map((r) => `<option ${r === last.champs.responsable ? "selected" : ""}>${r}</option>`).join("")}</select></div>
           <div class="field"><label>Responsable commercial</label><select>${RESPONSABLES_COMMERCIAUX.map((r) => `<option ${r === nc.responsableCommercial ? "selected" : ""}>${r}</option>`).join("")}</select></div>
           <div class="field"><label>Niveau indice</label><select>${NIVEAUX_INDICE.map((n) => `<option ${n === last.champs.niveauIndice ? "selected" : ""}>${n}</option>`).join("")}</select></div>
         </div>
@@ -599,9 +652,8 @@ function renderDetailRattachement(m) {
 const FIELD_DEFS_NOUVELLE_NC = [
   { key: "referenceProduit", label: "Référence produit", type: "text" },
   { key: "numeroCommande", label: "N° Commande", type: "text" },
-  { key: "client", label: "Client", type: "text" },
+  { key: "client", label: "Client / fournisseur / interne", type: "text" },
   { key: "typeNC", label: "Type de NC", type: "select", options: TYPES_NC },
-  { key: "origine", label: "Origine (Client / Fournisseur / Interne)", type: "select", options: ORIGINES, auto: true },
   { key: "serviceImpacte", label: "Service impacté", type: "select", options: SERVICES_IMPACTES },
   { key: "dateDetection", label: "Date de détection", type: "date" },
   { key: "dateDemande", label: "Date de la demande", type: "date" },
@@ -609,7 +661,6 @@ const FIELD_DEFS_NOUVELLE_NC = [
   { key: "cause", label: "Cause", type: "select", options: CAUSES },
   { key: "action", label: "Action", type: "select", options: ACTIONS },
   { key: "responsableCommercial", label: "Responsable commercial", type: "select", options: RESPONSABLES_COMMERCIAUX },
-  { key: "responsable", label: "Responsable", type: "select", options: RESPONSABLES },
   { key: "niveauIndice", label: "Niveau indice (calculé — voir bloc gravité)", type: "select", options: NIVEAUX_INDICE },
   { key: "descriptionAnomalie", label: "Description de l'anomalie", type: "textarea" },
 ];
@@ -642,12 +693,17 @@ function renderDetailNouvelleNC(m) {
   `;
 
   const prefillCard = collapsibleSection(`nc-prefill-${m.id}`, "Pré-remplissage IA — nouvelle NC (modifiable)", `
-    <div class="field"><label>Numéro NC</label><input type="text" value="${prefill.numero || ""}" /></div>
+    <div class="field">
+      <label>Numéro NC <span class="chip mono">Provisoire</span></label>
+      <input type="text" value="${prefill.numero || ""}" />
+      <div class="diff-hint" style="color:var(--text-muted);font-weight:500">
+        Numéro indicatif — le numéro définitif dépend de l'ordre dans lequel les nouvelles NC en attente sont validées, pas de l'ordre de détection. Il peut évoluer tant que cette NC n'est pas validée.
+      </div>
+    </div>
     ${FIELD_DEFS_NOUVELLE_NC.map((def) => `
       <div class="field" data-prefill-field="${def.key}">
         <label>${def.label}</label>
         ${fieldInput(def, effective[def.key])}
-        ${def.auto && prefill.origineAuto ? `<div class="diff-hint" style="color:var(--text-muted);font-weight:500">Proposé automatiquement à partir du domaine de l'expéditeur — à confirmer par le vérificateur.</div>` : ""}
         ${overrides[def.key] ? `<div class="diff-hint">Écrasé depuis ${overrides[def.key].from} : « ${prefill[def.key] || "—"} »</div>` : ""}
       </div>
     `).join("")}
@@ -785,9 +841,9 @@ function renderNcCard(nc) {
   const gs = niveau ? niveauIndiceStyle(niveau) : null;
   return `
     <div class="nc-card ${grayed ? "grayed" : ""}" data-open-nc="${nc.id}">
-      <div class="id">${nc.id} — suivi ${last.version} · ${nc.typeNC}</div>
+      <div class="id">${nc.id} — suivi ${last.version} · ${last.champs.typeNC}</div>
       <div class="titre">${nc.referenceProduit}</div>
-      <div class="meta">${nc.client} · ${nc.serviceImpacte} · ${nc.origine || "—"}</div>
+      <div class="meta">${nc.client} · ${nc.serviceImpacte}</div>
       ${niveau ? `<span class="chip" style="background:${gs.bg};color:${gs.color}">${niveau}</span>` : ""}
       <div class="foot">
         <span class="status-line">${statusDot(nc.statut === "nouveau" ? "nouveau" : nc.statut === "cloture" ? "cloture" : "en_cours")} ${formatDateShort(last.date)}</span>
@@ -805,6 +861,7 @@ function renderModal(ncId) {
   overlay.id = "modal-overlay";
 
   const mailsForNc = nc.versions.filter((v) => v.mailId).map((v) => getMail(v.mailId));
+  const last = nc.versions[nc.versions.length - 1];
 
   const isCloture = nc.statut === "cloture";
   const grayed = ncGrayed(nc);
@@ -816,7 +873,7 @@ function renderModal(ncId) {
       <div class="modal-head">
         <div>
           <h2>${nc.id} — ${nc.referenceProduit}</h2>
-          <div class="small-muted">${nc.client} · ${nc.typeNC} · ${nc.serviceImpacte} · commande n°${nc.numeroCommande} · détectée le ${formatDateShort(nc.dateDetection)}${nc.dateCloture ? ` · clôturée le ${formatDateShort(nc.dateCloture)}` : ""}</div>
+          <div class="small-muted">${nc.client} · ${last.champs.typeNC} · ${nc.serviceImpacte} · commande n°${nc.numeroCommande} · détectée le ${formatDateShort(nc.dateDetection)}${nc.dateCloture ? ` · clôturée le ${formatDateShort(nc.dateCloture)}` : ""}</div>
         </div>
         <div class="modal-head-actions">
           <button class="btn" data-action="noop" title="Export (à venir)">📄</button>
@@ -832,6 +889,7 @@ function renderModal(ncId) {
         ${ficheCompleteCard(nc)}
 
         <div class="section-title">Mails associés (${mailsForNc.length})</div>
+        <div class="small-muted" style="margin-bottom:8px">📁 Les pièces jointes de ces mails sont archivées automatiquement dans le dossier ${nc.id} sur le NAS qualité — pas de dépôt manuel nécessaire.</div>
         ${mailsForNc.length ? mailsForNc.map((m) => mailMiniView(m)).join("") : `<div class="small-muted">Aucun mail associé — NC ouverte directement.</div>`}
       </div>
     </div>
@@ -845,7 +903,7 @@ function renderModal(ncId) {
 // listant les suivis où le champ a évolué) — un champ jamais modifié depuis
 // l'ouverture reste affiché normalement, une seule fois, comme le reste de
 // la fiche.
-const CHAMPS_ETAT = ["cause", "action", "responsable", "niveauIndice"];
+const CHAMPS_ETAT = ["typeNC", "cause", "action", "niveauIndice"];
 
 function stableAndChangingFields(nc) {
   const stable = [];
@@ -923,7 +981,13 @@ function ficheCompleteCard(nc) {
     <div class="card">
       <h3>Fiche NC — suivi ${last.version}</h3>
 
-      <div class="section-title" style="margin-top:0">Dates</div>
+      <div class="section-title" style="margin-top:0">Identité</div>
+      <div class="kv">
+        ${numeroCommandeRow(nc.numeroCommande)}
+        <div class="k">Client / fournisseur / interne</div><div>${nc.client}</div>
+      </div>
+
+      <div class="section-title">Dates</div>
       <div class="kv">
         <div class="k">Date de détection</div><div>${formatDateShort(nc.dateDetection)}</div>
         <div class="k">Date de la demande</div><div>${formatDateField(nc.dateDemande)}</div>
@@ -1063,9 +1127,6 @@ function renderStatsPage() {
         <div class="field" style="margin:0"><label>Gravité</label>
           <select data-stats-filter="gravite"><option value="">Toutes</option>${NIVEAUX_INDICE.map((n) => `<option ${state.stats.gravite === n ? "selected" : ""}>${n}</option>`).join("")}</select>
         </div>
-        <div class="field" style="margin:0"><label>Origine</label>
-          <select data-stats-filter="origine"><option value="">Toutes</option>${ORIGINES.map((o) => `<option ${state.stats.origine === o ? "selected" : ""}>${o}</option>`).join("")}</select>
-        </div>
         <div class="field" style="margin:0;flex:1;min-width:200px">
           <label>Recherche texte</label>
           <input type="text" data-stats-search value="${state.stats.recherche}" placeholder="Réf. produit, client, mot-clé…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px" />
@@ -1155,9 +1216,35 @@ function renderSyncReportView() {
   `;
 }
 
+// Coefficients de l'indice de gravité — configurables, pas figés en dur
+// (voir VISION_APP_FINALE.md, bloc "Indice de gravité").
+function renderGraviteCoeffView() {
+  const draft = state.admin.graviteDraft;
+  return `
+    <div class="card">
+      <h3>Coefficients de l'indice de gravité</h3>
+      <div class="note-box">
+        Chaque sous-critère (Sécurité, Utilisateur, Client, Impact poseur, Coût) est noté séparément
+        pour une NC (voir la fiche NC), puis pondéré par le coefficient ci-dessous pour calculer l'IG —
+        ces coefficients sont repris de la v1 et modifiables ici, pas figés en dur dans le code.
+      </div>
+      <div class="kv" style="grid-template-columns:170px 120px">
+        ${SOUS_CRITERES_GRAVITE.map((c) => `
+          <div class="k">${c}</div>
+          <div><input type="number" min="0" step="1" data-gravite-coeff="${c}" value="${draft[c] ?? GRAVITE_COEFFICIENTS[c]}" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px" /></div>
+        `).join("")}
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn primary" data-admin-save-gravite>✓ Enregistrer les coefficients</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderAdminPage() {
   const listNames = Object.keys(REF_LISTS);
   const onSync = state.admin.activeList === "__sync__";
+  const onGravite = state.admin.activeList === "__gravite__";
   const active = REF_LISTS[state.admin.activeList];
   return `
     <div class="admin-page">
@@ -1172,6 +1259,10 @@ function renderAdminPage() {
           `).join("")}
           <div class="pane-header" style="margin-top:8px">Champs personnalisés</div>
           <div style="padding:10px 16px" class="small-muted">${CHAMPS_PERSONNALISES.length} champ(s) créé(s)</div>
+          <div class="pane-header" style="margin-top:8px">Indice de gravité</div>
+          <div class="admin-list-item ${onGravite ? "selected" : ""}" data-admin-list="__gravite__">
+            ⚖️ Coefficients de gravité
+          </div>
           <div class="pane-header" style="margin-top:8px">Synchronisation</div>
           <div class="admin-list-item ${onSync ? "selected" : ""}" data-admin-list="__sync__">
             🔄 Rapport de synchronisation Excel
@@ -1179,7 +1270,7 @@ function renderAdminPage() {
         </div>
 
         <div class="admin-detail">
-          ${onSync ? renderSyncReportView() : `
+          ${onSync ? renderSyncReportView() : onGravite ? renderGraviteCoeffView() : `
           <div class="card">
             <h3>${state.admin.activeList}</h3>
             <div class="admin-values">
@@ -1270,7 +1361,7 @@ function renderAdminConfirmModal() {
 
 function labelForField(k) {
   return {
-    cause: "Cause", action: "Action", responsable: "Responsable", niveauIndice: "Niveau indice",
+    typeNC: "Type de NC", cause: "Cause", action: "Action", niveauIndice: "Niveau indice",
     descriptionAnomalie: "Description de l'anomalie", actionCurativeImmediate: "Action curative immédiate",
   }[k] || k;
 }
@@ -1327,6 +1418,15 @@ function attachHandlers() {
       state.validation.ncTargetOverride[mailId] = el.value;
       state.validation.changingNc[mailId] = false;
       toast(`Mail rattaché à ${el.value} (simulation)`);
+      render();
+    })
+  );
+
+  $app.querySelectorAll("[data-toggle-commande]").forEach((el) =>
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const num = el.dataset.toggleCommande;
+      state.commandeDetailOpen[num] = !state.commandeDetailOpen[num];
       render();
     })
   );
@@ -1418,6 +1518,11 @@ function attachHandlers() {
     el.addEventListener("click", () => {
       const v = state.admin.newValue.trim();
       if (!v) return;
+      const existing = REF_LISTS[state.admin.activeList].items;
+      if (existing.some((item) => item.toLowerCase() === v.toLowerCase())) {
+        toast(`« ${v} » existe déjà dans la liste « ${state.admin.activeList} » — pas de doublon possible.`);
+        return;
+      }
       state.admin.confirm = {
         type: "add",
         payload: { list: state.admin.activeList, value: v },
@@ -1437,6 +1542,20 @@ function attachHandlers() {
       render();
     })
   );
+  $app.querySelectorAll("[data-gravite-coeff]").forEach((el) =>
+    el.addEventListener("input", () => { state.admin.graviteDraft[el.dataset.graviteCoeff] = Number(el.value); })
+  );
+  $app.querySelectorAll("[data-admin-save-gravite]").forEach((el) =>
+    el.addEventListener("click", () => {
+      state.admin.confirm = {
+        type: "save-gravite",
+        payload: { ...state.admin.graviteDraft },
+        message: "Enregistrer ces coefficients de gravité ? Ils s'appliquent au calcul de l'IG pour toutes les NC dès la prochaine évaluation — les scores déjà calculés sur les NC existantes ne sont pas recalculés rétroactivement.",
+      };
+      render();
+    })
+  );
+
   $app.querySelectorAll("[data-admin-field-name]").forEach((el) =>
     el.addEventListener("input", () => { state.admin.newFieldName = el.value; })
   );
@@ -1463,6 +1582,15 @@ function attachHandlers() {
     });
     const closeBtn = overlay.querySelector("[data-close-modal]");
     if (closeBtn) closeBtn.addEventListener("click", () => { state.suivi.modalNc = null; render(); });
+
+    overlay.querySelectorAll("[data-toggle-commande]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const num = el.dataset.toggleCommande;
+        state.commandeDetailOpen[num] = !state.commandeDetailOpen[num];
+        render();
+      })
+    );
 
     const closeNcBtn = overlay.querySelector("[data-close-nc]");
     if (closeNcBtn) closeNcBtn.addEventListener("click", () => {
@@ -1518,6 +1646,10 @@ function attachHandlers() {
         CHAMPS_PERSONNALISES.push({ cle: c.payload.name.toLowerCase().replace(/\s+/g, "_"), libelle: c.payload.name, type: c.payload.fieldType, creeLe: TODAY_ISO });
         state.admin.newFieldName = "";
         toast(`Champ « ${c.payload.name} » créé — disponible à partir de la prochaine version de chaque NC`);
+      } else if (c.type === "save-gravite") {
+        Object.assign(GRAVITE_COEFFICIENTS, c.payload);
+        state.admin.graviteDraft = {};
+        toast("Coefficients de gravité enregistrés");
       }
       state.admin.confirm = null;
       render();
