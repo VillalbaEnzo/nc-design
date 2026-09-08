@@ -36,7 +36,52 @@ const ACTIONS = [
   "Mise à jour documents", "Refabrication", "Renvoi pièces", "Réclamation au fournisseur", "/",
 ];
 const RESPONSABLES = ["Pierre", "Charlotte", "Matthieu", "Laurent", "Dominique", "David", "Vincent", "BE Methode", "BE Com", "Serrurerie", "Achats / Appro", "Hakim"];
-const NIVEAUX_INDICE = ["Aucun", "Mineur", "Moyen", "Majeur"];
+// "Responsable commercial" est le champ réellement utilisé (97 % de remplissage
+// dans l'Excel réel) — "Responsable" (1,4 %) reste au catalogue mais n'est pas
+// mis en avant dans les formulaires. Distinction volontairement non tranchée
+// (voir PLAN_TECHNIQUE.md §13 pt.4) : les deux champs coexistent tels quels.
+const RESPONSABLES_COMMERCIAUX = ["Pierre", "Charlotte", "Matthieu", "Laurent", "Dominique", "David", "Vincent", "Hakim", "Nadia"];
+const NIVEAUX_INDICE = ["Aucun", "Mineur", "Moyen", "Majeur", "Critique"];
+const ORIGINES = ["Client", "Fournisseur", "Interne"];
+
+// Sous-critères du bloc "Indice de gravité" (score calculé, pas saisi
+// directement) — voir VISION_APP_FINALE.md, section "Champs de la fiche NC".
+// Le champ "Equipe" du bloc réel n'est volontairement pas repris ici : jamais
+// rempli dans l'Excel (0 %), voir PLAN_TECHNIQUE.md §13 pt.3.
+const SOUS_CRITERES_GRAVITE = ["Sécurité", "Utilisateur", "Client", "Impact poseur", "Coût"];
+const NIVEAU_SOUS_CRITERE = ["Aucun", "Faible", "Moyen", "Élevé"];
+
+function niveauIndiceStyle(n) {
+  return {
+    Aucun: { color: "#5c5c5c", bg: "#f0f0f0" },
+    Mineur: { color: "#3f7d52", bg: "#edf5ef" },
+    Moyen: { color: "#93611a", bg: "#faf1e2" },
+    Majeur: { color: "#a3362b", bg: "#fbeeec" },
+    Critique: { color: "#ffffff", bg: "#7a1f16" },
+  }[n] || { color: "#5c5c5c", bg: "#f0f0f0" };
+}
+
+// ---- Listes de référence modifiables (écran d'administration) --------------
+// Copie mutable des référentiels ci-dessus : l'administration simule
+// l'ajout/suppression de valeurs sans toucher aux constantes sources.
+const REF_LISTS = {
+  "Type de NC": { items: TYPES_NC.slice(), locked: [] },
+  "Service impacté": { items: SERVICES_IMPACTES.slice(), locked: [] },
+  "Cause": { items: CAUSES.slice(), locked: [] },
+  "Action": { items: ACTIONS.slice(), locked: [] },
+  "Responsable commercial": { items: RESPONSABLES_COMMERCIAUX.slice(), locked: [] },
+  "Responsable": { items: RESPONSABLES.slice(), locked: [] },
+  "Origine du signalement": { items: ORIGINES.slice(), locked: ORIGINES.slice() },
+  "Niveau indice": { items: NIVEAUX_INDICE.slice(), locked: NIVEAUX_INDICE.slice() },
+};
+
+// ---- Champs personnalisés créés par l'administration ------------------------
+// cree_le détermine à partir de quelle version le champ apparaît — les
+// versions antérieures restent figées sans lui (voir PLAN_TECHNIQUE.md §3).
+const CHAMPS_PERSONNALISES = [
+  { cle: "numeroLot", libelle: "Numéro de lot", type: "texte", creeLe: "2026-07-01" },
+  { cle: "delaiGarantie", libelle: "Sous garantie", type: "liste", valeurs: ["Oui", "Non", "À vérifier"], creeLe: "2026-08-15" },
+];
 
 const STATUT_COULEUR = {
   en_cours: { label: "En cours", color: "#a3362b", bg: "#fbeeec" },
@@ -339,99 +384,99 @@ Atelier Camping des Pins`,
 const HISTORIQUE_SIMILAIRES = {
   m2: [
     { id: "NC2025-441", titre: "Rayure panneau HPL à réception", score: 94, champs: {
-      referenceProduit: "HPL-214", numeroCommande: "28810", client: "Aire de Jeux Vallée Verte", typeNC: "NCE", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2025-06-14",
-      cause: "Pièce endommagée", descriptionAnomalie: "Rayure de 12 cm sur panneau HPL constatée à la réception, avant assemblage.", action: "Renvoi pièces", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-214", numeroCommande: "28810", client: "Aire de Jeux Vallée Verte", typeNC: "NCE", origine: "Client", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2025-06-14",
+      cause: "Pièce endommagée", descriptionAnomalie: "Rayure de 12 cm sur panneau HPL constatée à la réception, avant assemblage.", action: "Renvoi pièces", responsable: "Achats / Appro", responsableCommercial: "Pierre", niveauIndice: "Mineur" } },
     { id: "NC2024-198", titre: "Rayure carrosserie module toboggan", score: 89, champs: {
-      referenceProduit: "TOB-980", numeroCommande: "26510", client: "Commune de Pradelles", typeNC: "NCE", serviceImpacte: "Peinture", dateDetection: "2024-05-02",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Rayure profonde sur le fût du toboggan, visible dès le déballage.", action: "Refabrication", responsable: "Charlotte", niveauIndice: "Moyen" } },
+      referenceProduit: "TOB-980", numeroCommande: "26510", client: "Commune de Pradelles", typeNC: "NCE", origine: "Client", serviceImpacte: "Peinture", dateDetection: "2024-05-02",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Rayure profonde sur le fût du toboggan, visible dès le déballage.", action: "Refabrication", responsable: "Charlotte", responsableCommercial: "Charlotte", niveauIndice: "Moyen" } },
     { id: "NC2025-312", titre: "Éclat peinture panneau, transport", score: 82, champs: {
-      referenceProduit: "HPL-095", numeroCommande: "29120", client: "Camping Les Écureuils", typeNC: "NCF", serviceImpacte: "Transport", dateDetection: "2025-03-11",
-      cause: "Problème d'emballage", descriptionAnomalie: "Éclats de peinture sur un panneau, emballage insuffisant pour le transport.", action: "Réclamation au fournisseur", responsable: "Vincent", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-095", numeroCommande: "29120", client: "Camping Les Écureuils", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Transport", dateDetection: "2025-03-11",
+      cause: "Problème d'emballage", descriptionAnomalie: "Éclats de peinture sur un panneau, emballage insuffisant pour le transport.", action: "Réclamation au fournisseur", responsable: "Vincent", responsableCommercial: "Matthieu", niveauIndice: "Mineur" } },
     { id: "NC2023-076", titre: "Rayure profonde panneau de façade", score: 79, champs: {
-      referenceProduit: "HPL-050", numeroCommande: "24310", client: "Mairie de Vergonne", typeNC: "NCE", serviceImpacte: "Serrurerie", dateDetection: "2023-09-20",
-      cause: "Défaut de montage sur site", descriptionAnomalie: "Rayure profonde constatée après montage, origine incertaine.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Moyen" } },
+      referenceProduit: "HPL-050", numeroCommande: "24310", client: "Mairie de Vergonne", typeNC: "NCE", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2023-09-20",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Rayure profonde constatée après montage, origine incertaine.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Laurent", niveauIndice: "Moyen" } },
     { id: "NC2025-503", titre: "Rayure superficielle toit de cabane", score: 74, champs: {
-      referenceProduit: "CAB-330", numeroCommande: "29650", client: "Village Vacances Beaulieu", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2025-08-02",
-      cause: "Info client incorrecte", descriptionAnomalie: "Rayure superficielle signalée, finalement trace de feutre nettoyable.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+      referenceProduit: "CAB-330", numeroCommande: "29650", client: "Village Vacances Beaulieu", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2025-08-02",
+      cause: "Info client incorrecte", descriptionAnomalie: "Rayure superficielle signalée, finalement trace de feutre nettoyable.", action: "/", responsable: "Dominique", responsableCommercial: "Dominique", niveauIndice: "Aucun" } },
     { id: "NC2024-390", titre: "Choc léger panneau lors du déchargement", score: 71, champs: {
-      referenceProduit: "HPL-140", numeroCommande: "27200", client: "Récré Action Ouest", typeNC: "SAV", serviceImpacte: "Transport", dateDetection: "2024-10-05",
-      cause: "Manquants sur site", descriptionAnomalie: "Choc léger constaté sur un panneau lors du déchargement du camion.", action: "Devis", responsable: "David", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-140", numeroCommande: "27200", client: "Récré Action Ouest", typeNC: "SAV", origine: "Client", serviceImpacte: "Transport", dateDetection: "2024-10-05",
+      cause: "Manquants sur site", descriptionAnomalie: "Choc léger constaté sur un panneau lors du déchargement du camion.", action: "Devis", responsable: "David", responsableCommercial: "David", niveauIndice: "Mineur" } },
     { id: "NC2022-158", titre: "Rayure HPL due à un sanglage serré", score: 68, champs: {
-      referenceProduit: "HPL-012", numeroCommande: "21870", client: "Commune de Sainte-Row", typeNC: "NCI", serviceImpacte: "Expédition / Assemblage Sport", dateDetection: "2022-11-18",
-      cause: "Non respect des délais", descriptionAnomalie: "Marque de sanglage trop serré ayant rayé le panneau pendant le transport.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-012", numeroCommande: "21870", client: "Commune de Sainte-Row", typeNC: "NCI", origine: "Interne", serviceImpacte: "Expédition / Assemblage Sport", dateDetection: "2022-11-18",
+      cause: "Non respect des délais", descriptionAnomalie: "Marque de sanglage trop serré ayant rayé le panneau pendant le transport.", action: "Mise à jour documents", responsable: "BE Methode", responsableCommercial: "Vincent", niveauIndice: "Mineur" } },
     { id: "NC2025-021", titre: "Marque de frottement porte coulissante", score: 65, champs: {
-      referenceProduit: "CAB-410", numeroCommande: "28990", client: "Espace Détente Sud", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2025-01-09",
-      cause: "Info client incorrecte", descriptionAnomalie: "Marque de frottement signalée, usage normal de la porte coulissante.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+      referenceProduit: "CAB-410", numeroCommande: "28990", client: "Espace Détente Sud", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2025-01-09",
+      cause: "Info client incorrecte", descriptionAnomalie: "Marque de frottement signalée, usage normal de la porte coulissante.", action: "/", responsable: "Laurent", responsableCommercial: "Hakim", niveauIndice: "Aucun" } },
     { id: "NC2024-266", titre: "Éraflure bas de structure", score: 61, champs: {
-      referenceProduit: "STR-160", numeroCommande: "27510", client: "Récréa Loisirs SAS", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2024-07-22",
-      cause: "Rouille", descriptionAnomalie: "Éraflure en bas de structure ayant favorisé un point de rouille naissant.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "STR-160", numeroCommande: "27510", client: "Récréa Loisirs SAS", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2024-07-22",
+      cause: "Rouille", descriptionAnomalie: "Éraflure en bas de structure ayant favorisé un point de rouille naissant.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Nadia", niveauIndice: "Mineur" } },
     { id: "NC2023-410", titre: "Rayure sur panneau arrière module", score: 58, champs: {
-      referenceProduit: "HPL-201", numeroCommande: "25430", client: "Groupe Cordelia Aménagement", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2023-12-01",
-      cause: "Pièce endommagée", descriptionAnomalie: "Rayure sur le panneau arrière constatée dès réception du lot fournisseur.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-201", numeroCommande: "25430", client: "Groupe Cordelia Aménagement", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2023-12-01",
+      cause: "Pièce endommagée", descriptionAnomalie: "Rayure sur le panneau arrière constatée dès réception du lot fournisseur.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Pierre", niveauIndice: "Mineur" } },
   ],
   m7: [
     { id: "NC2025-377", titre: "Grincement métallique portique à la mise en service", score: 91, champs: {
-      referenceProduit: "PORT-330", numeroCommande: "29010", client: "Commune de Vallonne", typeNC: "NCE", serviceImpacte: "Serrurerie", dateDetection: "2025-05-19",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Grincement métallique constant sur le portique, dès la mise en service.", action: "Réclamation au fournisseur", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "PORT-330", numeroCommande: "29010", client: "Commune de Vallonne", typeNC: "NCE", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2025-05-19",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Grincement métallique constant sur le portique, dès la mise en service.", action: "Réclamation au fournisseur", responsable: "Serrurerie", responsableCommercial: "Charlotte", niveauIndice: "Mineur" } },
     { id: "NC2024-229", titre: "Cliquetis chaîne de balançoire", score: 84, champs: {
-      referenceProduit: "BAL-150", numeroCommande: "26980", client: "Espace Détente Nord", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2024-04-11",
-      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne dû à une fixation mal serrée.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "BAL-150", numeroCommande: "26980", client: "Espace Détente Nord", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2024-04-11",
+      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne dû à une fixation mal serrée.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Matthieu", niveauIndice: "Mineur" } },
     { id: "NC2025-140", titre: "Bruit anormal axe de rotation manège", score: 77, champs: {
-      referenceProduit: "MAN-090", numeroCommande: "28510", client: "Village Vacances Les Tilleuls", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2025-02-24",
-      cause: "Erreur de conception", descriptionAnomalie: "Bruit anormal de l'axe de rotation, jeu mécanique trop important.", action: "Mise à jour conception", responsable: "BE Methode", niveauIndice: "Moyen" } },
+      referenceProduit: "MAN-090", numeroCommande: "28510", client: "Village Vacances Les Tilleuls", typeNC: "NCI", origine: "Interne", serviceImpacte: "BE Methode", dateDetection: "2025-02-24",
+      cause: "Erreur de conception", descriptionAnomalie: "Bruit anormal de l'axe de rotation, jeu mécanique trop important.", action: "Mise à jour conception", responsable: "BE Methode", responsableCommercial: "Laurent", niveauIndice: "Moyen" } },
     { id: "NC2023-355", titre: "Grincement intermittent structure serrurerie", score: 73, champs: {
-      referenceProduit: "STR-410", numeroCommande: "24990", client: "Camping des Pins", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2023-08-30",
-      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement intermittent selon la météo, jonctions métalliques à revoir.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "STR-410", numeroCommande: "24990", client: "Camping des Pins", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2023-08-30",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement intermittent selon la météo, jonctions métalliques à revoir.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Dominique", niveauIndice: "Mineur" } },
     { id: "NC2024-088", titre: "Vibration portique par grand vent", score: 69, champs: {
-      referenceProduit: "PORT-200", numeroCommande: "26120", client: "Mairie de Vallonne", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2024-01-15",
-      cause: "Info client incorrecte", descriptionAnomalie: "Vibration signalée par vent fort, comportement normal de la structure.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+      referenceProduit: "PORT-200", numeroCommande: "26120", client: "Mairie de Vallonne", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2024-01-15",
+      cause: "Info client incorrecte", descriptionAnomalie: "Vibration signalée par vent fort, comportement normal de la structure.", action: "/", responsable: "Dominique", responsableCommercial: "David", niveauIndice: "Aucun" } },
     { id: "NC2022-301", titre: "Sifflement toboggan tube métallique", score: 66, champs: {
-      referenceProduit: "TOB-075", numeroCommande: "22340", client: "Récréa Loisirs SAS", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2022-06-08",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Sifflement du vent dans le tube métallique du toboggan, ébavurage insuffisant.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "TOB-075", numeroCommande: "22340", client: "Récréa Loisirs SAS", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2022-06-08",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Sifflement du vent dans le tube métallique du toboggan, ébavurage insuffisant.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Vincent", niveauIndice: "Mineur" } },
     { id: "NC2025-459", titre: "Claquement fixation balançoire", score: 63, champs: {
-      referenceProduit: "BAL-260", numeroCommande: "29380", client: "Groupe Cordelia Aménagement", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2025-07-02",
-      cause: "Manquants en visserie", descriptionAnomalie: "Claquement au niveau de la fixation haute de la balançoire.", action: "Achat matériel", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "BAL-260", numeroCommande: "29380", client: "Groupe Cordelia Aménagement", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2025-07-02",
+      cause: "Manquants en visserie", descriptionAnomalie: "Claquement au niveau de la fixation haute de la balançoire.", action: "Achat matériel", responsable: "Serrurerie", responsableCommercial: "Hakim", niveauIndice: "Mineur" } },
     { id: "NC2024-512", titre: "Bruit anormal roulement tourniquet", score: 60, champs: {
-      referenceProduit: "TRN-045", numeroCommande: "27860", client: "Village Vacances Beaulieu", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2024-11-27",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Bruit de roulement anormal sur le tourniquet, graissage insuffisant en sortie d'atelier.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+      referenceProduit: "TRN-045", numeroCommande: "27860", client: "Village Vacances Beaulieu", typeNC: "NCI", origine: "Interne", serviceImpacte: "BE Methode", dateDetection: "2024-11-27",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Bruit de roulement anormal sur le tourniquet, graissage insuffisant en sortie d'atelier.", action: "Mise à jour documents", responsable: "BE Methode", responsableCommercial: "Nadia", niveauIndice: "Mineur" } },
     { id: "NC2023-199", titre: "Grincement portillon accès structure", score: 57, champs: {
-      referenceProduit: "PORT-118", numeroCommande: "24010", client: "Espace Détente Nord", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2023-05-14",
-      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement du portillon d'accès, charnières à régler.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "PORT-118", numeroCommande: "24010", client: "Espace Détente Nord", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2023-05-14",
+      cause: "Défaut de montage sur site", descriptionAnomalie: "Grincement du portillon d'accès, charnières à régler.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Pierre", niveauIndice: "Mineur" } },
     { id: "NC2021-233", titre: "Cliquetis chaîne portique", score: 54, champs: {
-      referenceProduit: "PORT-060", numeroCommande: "19870", client: "Commune de Sainte-Row", typeNC: "SAV", serviceImpacte: "Serrurerie", dateDetection: "2021-09-09",
-      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne sur portique, resserrage nécessaire.", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" } },
+      referenceProduit: "PORT-060", numeroCommande: "19870", client: "Commune de Sainte-Row", typeNC: "SAV", origine: "Client", serviceImpacte: "Serrurerie", dateDetection: "2021-09-09",
+      cause: "Manquants en visserie", descriptionAnomalie: "Cliquetis de chaîne sur portique, resserrage nécessaire.", action: "Correction sur le site", responsable: "Serrurerie", responsableCommercial: "Charlotte", niveauIndice: "Mineur" } },
   ],
   m11: [
     { id: "NC2024-347", titre: "Odeur plastique module rotomoulé neuf", score: 87, champs: {
-      referenceProduit: "CAB-310", numeroCommande: "26640", client: "Récréa Loisirs SAS", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2024-06-21",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique marquée sur un module rotomoulé neuf, atténuée après 3 semaines.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "CAB-310", numeroCommande: "26640", client: "Récréa Loisirs SAS", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2024-06-21",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique marquée sur un module rotomoulé neuf, atténuée après 3 semaines.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Matthieu", niveauIndice: "Mineur" } },
     { id: "NC2023-288", titre: "Odeur forte cabane exposée au soleil", score: 75, champs: {
-      referenceProduit: "CAB-220", numeroCommande: "24780", client: "Camping des Pins", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2023-07-30",
-      cause: "Info client incorrecte", descriptionAnomalie: "Odeur forte en plein soleil, dissipée après aération, non lié à un défaut matière.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+      referenceProduit: "CAB-220", numeroCommande: "24780", client: "Camping des Pins", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2023-07-30",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur forte en plein soleil, dissipée après aération, non lié à un défaut matière.", action: "/", responsable: "Laurent", responsableCommercial: "Laurent", niveauIndice: "Aucun" } },
     { id: "NC2025-062", titre: "Odeur persistante toboggan plastique", score: 70, champs: {
-      referenceProduit: "TOB-410", numeroCommande: "28150", client: "Village Vacances Les Tilleuls", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2025-01-28",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur persistante sur toboggan plastique, matière première suspectée.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "TOB-410", numeroCommande: "28150", client: "Village Vacances Les Tilleuls", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2025-01-28",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur persistante sur toboggan plastique, matière première suspectée.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Dominique", niveauIndice: "Mineur" } },
     { id: "NC2022-411", titre: "Odeur matière neuve module de jeu", score: 66, champs: {
-      referenceProduit: "STR-330", numeroCommande: "22980", client: "Mairie de Vallonne", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2022-10-14",
-      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de matière neuve normale, dissipée après une semaine d'utilisation.", action: "/", responsable: "Dominique", niveauIndice: "Aucun" } },
+      referenceProduit: "STR-330", numeroCommande: "22980", client: "Mairie de Vallonne", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2022-10-14",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de matière neuve normale, dissipée après une semaine d'utilisation.", action: "/", responsable: "Dominique", responsableCommercial: "David", niveauIndice: "Aucun" } },
     { id: "NC2024-190", titre: "Odeur résine structure composite", score: 62, champs: {
-      referenceProduit: "STR-280", numeroCommande: "26410", client: "Commune de Pradelles", typeNC: "NCI", serviceImpacte: "BE Methode", dateDetection: "2024-03-08",
-      cause: "Erreur de conception", descriptionAnomalie: "Odeur de résine sur structure composite, formulation à revoir avec le fournisseur.", action: "Mise à jour conception", responsable: "BE Methode", niveauIndice: "Moyen" } },
+      referenceProduit: "STR-280", numeroCommande: "26410", client: "Commune de Pradelles", typeNC: "NCI", origine: "Interne", serviceImpacte: "BE Methode", dateDetection: "2024-03-08",
+      cause: "Erreur de conception", descriptionAnomalie: "Odeur de résine sur structure composite, formulation à revoir avec le fournisseur.", action: "Mise à jour conception", responsable: "BE Methode", responsableCommercial: "Vincent", niveauIndice: "Moyen" } },
     { id: "NC2023-097", titre: "Odeur colle assemblage panneau", score: 59, champs: {
-      referenceProduit: "HPL-160", numeroCommande: "23640", client: "Espace Détente Sud", typeNC: "NCI", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2023-02-19",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de colle sur panneau assemblé, séchage insuffisant avant expédition.", action: "Mise à jour documents", responsable: "BE Methode", niveauIndice: "Mineur" } },
+      referenceProduit: "HPL-160", numeroCommande: "23640", client: "Espace Détente Sud", typeNC: "NCI", origine: "Interne", serviceImpacte: "Expédition / Assemblage Jeux", dateDetection: "2023-02-19",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de colle sur panneau assemblé, séchage insuffisant avant expédition.", action: "Mise à jour documents", responsable: "BE Methode", responsableCommercial: "Hakim", niveauIndice: "Mineur" } },
     { id: "NC2025-233", titre: "Odeur caoutchouc revêtement sol souple", score: 55, champs: {
-      referenceProduit: "SOL-090", numeroCommande: "29240", client: "Groupe Cordelia Aménagement", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2025-04-03",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de caoutchouc marquée sur le revêtement de sol souple livré.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "SOL-090", numeroCommande: "29240", client: "Groupe Cordelia Aménagement", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2025-04-03",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de caoutchouc marquée sur le revêtement de sol souple livré.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Nadia", niveauIndice: "Mineur" } },
     { id: "NC2021-176", titre: "Odeur persistante bac à sable plastique", score: 52, champs: {
-      referenceProduit: "BAC-040", numeroCommande: "20110", client: "Camping Les Écureuils", typeNC: "Non recevable", serviceImpacte: "Poseur", dateDetection: "2021-06-25",
-      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de plastique neuf sur bac à sable, dissipée naturellement.", action: "/", responsable: "Laurent", niveauIndice: "Aucun" } },
+      referenceProduit: "BAC-040", numeroCommande: "20110", client: "Camping Les Écureuils", typeNC: "Non recevable", origine: "Client", serviceImpacte: "Poseur", dateDetection: "2021-06-25",
+      cause: "Info client incorrecte", descriptionAnomalie: "Odeur de plastique neuf sur bac à sable, dissipée naturellement.", action: "/", responsable: "Laurent", responsableCommercial: "Pierre", niveauIndice: "Aucun" } },
     { id: "NC2024-405", titre: "Odeur électrique éclairage structure", score: 49, champs: {
-      referenceProduit: "ECL-015", numeroCommande: "27340", client: "Récré Action Ouest", typeNC: "SAV", serviceImpacte: "Fournisseur", dateDetection: "2024-09-16",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Légère odeur électrique au niveau du bloc d'éclairage, composant à remplacer.", action: "Renvoi pièces", responsable: "Achats / Appro", niveauIndice: "Moyen" } },
+      referenceProduit: "ECL-015", numeroCommande: "27340", client: "Récré Action Ouest", typeNC: "SAV", origine: "Client", serviceImpacte: "Fournisseur", dateDetection: "2024-09-16",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Légère odeur électrique au niveau du bloc d'éclairage, composant à remplacer.", action: "Renvoi pièces", responsable: "Achats / Appro", responsableCommercial: "Charlotte", niveauIndice: "Moyen" } },
     { id: "NC2022-064", titre: "Odeur plastique fondu élément toboggan", score: 46, champs: {
-      referenceProduit: "TOB-020", numeroCommande: "21430", client: "Village Vacances Beaulieu", typeNC: "NCF", serviceImpacte: "Fournisseur", dateDetection: "2022-02-11",
-      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique fondu sur un élément, défaut de moulage suspecté.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", niveauIndice: "Mineur" } },
+      referenceProduit: "TOB-020", numeroCommande: "21430", client: "Village Vacances Beaulieu", typeNC: "NCF", origine: "Fournisseur", serviceImpacte: "Fournisseur", dateDetection: "2022-02-11",
+      cause: "Défaut de fabrication", descriptionAnomalie: "Odeur de plastique fondu sur un élément, défaut de moulage suspecté.", action: "Réclamation au fournisseur", responsable: "Achats / Appro", responsableCommercial: "Matthieu", niveauIndice: "Mineur" } },
   ],
 };
 
@@ -444,6 +489,9 @@ const PREREMPLISSAGE_NOUVELLE_NC = {
     client: "Récréa Loisirs SAS",
     typeNC: "NCE",
     serviceImpacte: "Expédition / Assemblage Jeux",
+    origine: "Client",
+    origineAuto: true,
+    responsableCommercial: "Vincent",
     dateDetection: "2026-08-29",
     cause: "Pièce endommagée",
     descriptionAnomalie:
@@ -459,6 +507,9 @@ const PREREMPLISSAGE_NOUVELLE_NC = {
     client: "Groupe Cordelia Aménagement",
     typeNC: "NCE",
     serviceImpacte: "Serrurerie",
+    origine: "Client",
+    origineAuto: true,
+    responsableCommercial: "Vincent",
     dateDetection: "2026-08-27",
     cause: "Défaut de fabrication",
     descriptionAnomalie:
@@ -474,6 +525,9 @@ const PREREMPLISSAGE_NOUVELLE_NC = {
     client: "Village Vacances Les Tilleuls",
     typeNC: "NCF",
     serviceImpacte: "Fournisseur",
+    origine: "Client",
+    origineAuto: true,
+    responsableCommercial: "Dominique",
     dateDetection: "2026-08-25",
     cause: "Défaut de fabrication",
     descriptionAnomalie:
@@ -506,9 +560,17 @@ const NCS = {
     client: "Camping des Pins",
     typeNC: "NCE",
     serviceImpacte: "Peinture",
+    origine: "Client",
+    origineAuto: true,
     dateDetection: "2026-08-18",
     statut: "en_cours",
     dateCloture: null,
+    responsableCommercial: "Charlotte",
+    couts: { reparation: null, materiel: null, transport: 145, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Aucun", "Utilisateur": "Faible", "Client": "Moyen", "Impact poseur": "Faible", "Coût": "Faible" },
+      ig: 22,
+    },
     versions: [
       {
         version: 1,
@@ -552,9 +614,17 @@ const NCS = {
     client: "Récréa Loisirs SAS",
     typeNC: "SAV",
     serviceImpacte: "Serrurerie",
+    origine: "Client",
+    origineAuto: true,
     dateDetection: "2026-08-15",
     statut: "en_cours",
     dateCloture: null,
+    responsableCommercial: "Matthieu",
+    couts: { reparation: null, materiel: null, transport: null, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Faible", "Utilisateur": "Moyen", "Client": "Moyen", "Impact poseur": "Faible", "Coût": "Aucun" },
+      ig: 18,
+    },
     versions: [
       {
         version: 1,
@@ -572,7 +642,7 @@ const NCS = {
         date: "2026-08-27",
         mailId: "m6",
         verified: false,
-        champs: { cause: "Défaut de montage sur site", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Mineur" },
+        champs: { cause: "Défaut de montage sur site", action: "Correction sur le site", responsable: "Serrurerie", niveauIndice: "Moyen" },
         journal: {
           descriptionAnomalie: "Le client signale que le jeu persiste malgré un premier réglage effectué le 20/08.",
           actionCurativeImmediate: "Nouvelle intervention à planifier pour resserrage complet des charnières.",
@@ -587,9 +657,17 @@ const NCS = {
     client: "Mairie de Vallonne",
     typeNC: "NCI",
     serviceImpacte: "BE Methode",
+    origine: "Interne",
+    origineAuto: false,
     dateDetection: "2026-07-18",
     statut: "en_cours",
     dateCloture: null,
+    responsableCommercial: null,
+    couts: { reparation: null, materiel: null, transport: null, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Aucun", "Utilisateur": "Faible", "Client": "Aucun", "Impact poseur": "Aucun", "Coût": "Aucun" },
+      ig: 6,
+    },
     versions: [
       {
         version: 1,
@@ -611,9 +689,17 @@ const NCS = {
     client: "Groupe Cordelia Aménagement",
     typeNC: "NCE",
     serviceImpacte: "Serrurerie",
+    origine: "Client",
+    origineAuto: true,
     dateDetection: "2026-08-27",
     statut: "nouveau",
     dateCloture: null,
+    responsableCommercial: "Vincent",
+    couts: { reparation: null, materiel: null, transport: null, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Faible", "Utilisateur": "Moyen", "Client": "Faible", "Impact poseur": "Aucun", "Coût": "Faible" },
+      ig: 15,
+    },
     versions: [
       {
         version: 1,
@@ -635,9 +721,17 @@ const NCS = {
     client: "Village Vacances Les Tilleuls",
     typeNC: "NCF",
     serviceImpacte: "Fournisseur",
+    origine: "Fournisseur",
+    origineAuto: true,
     dateDetection: "2026-08-25",
     statut: "nouveau",
     dateCloture: null,
+    responsableCommercial: "Dominique",
+    couts: { reparation: null, materiel: null, transport: null, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Aucun", "Utilisateur": "Faible", "Client": "Faible", "Impact poseur": "Aucun", "Coût": "Aucun" },
+      ig: 8,
+    },
     versions: [
       {
         version: 1,
@@ -659,9 +753,17 @@ const NCS = {
     client: "Espace Détente Nord",
     typeNC: "SAV",
     serviceImpacte: "Serrurerie",
+    origine: "Client",
+    origineAuto: true,
     dateDetection: "2026-08-05",
     statut: "cloture",
     dateCloture: "2026-08-28",
+    responsableCommercial: "Laurent",
+    couts: { reparation: null, materiel: null, transport: null, tempsPasseH: null },
+    gravite: {
+      sousCriteres: { "Sécurité": "Faible", "Utilisateur": "Moyen", "Client": "Moyen", "Impact poseur": "Faible", "Coût": "Aucun" },
+      ig: 19,
+    },
     versions: [
       {
         version: 1,
@@ -694,9 +796,17 @@ const NCS = {
     client: "Village Vacances Les Tilleuls",
     typeNC: "NCI",
     serviceImpacte: "Serrurerie",
+    origine: "Interne",
+    origineAuto: false,
     dateDetection: "2026-08-10",
     statut: "cloture",
     dateCloture: "2026-08-26",
+    responsableCommercial: "Nadia",
+    couts: { reparation: null, materiel: null, transport: 62, tempsPasseH: 1.5 },
+    gravite: {
+      sousCriteres: { "Sécurité": "Aucun", "Utilisateur": "Faible", "Client": "Aucun", "Impact poseur": "Aucun", "Coût": "Faible" },
+      ig: 7,
+    },
     versions: [
       {
         version: 1,
@@ -729,9 +839,17 @@ const NCS = {
     client: "Commune de Sainte-Row",
     typeNC: "NCF",
     serviceImpacte: "Fournisseur",
+    origine: "Fournisseur",
+    origineAuto: true,
     dateDetection: "2026-07-02",
     statut: "cloture",
     dateCloture: "2026-07-20",
+    responsableCommercial: "Vincent",
+    couts: { reparation: 210, materiel: null, transport: 90, tempsPasseH: 3 },
+    gravite: {
+      sousCriteres: { "Sécurité": "Aucun", "Utilisateur": "Moyen", "Client": "Moyen", "Impact poseur": "Faible", "Coût": "Moyen" },
+      ig: 26,
+    },
     versions: [
       {
         version: 1,
@@ -758,3 +876,69 @@ const NCS = {
     ],
   },
 };
+
+// ---- Helpers coûts / gravité -------------------------------------------------
+//
+// Piège identifié dans l'analyse de l'Excel réel : "Coût total" ne doit
+// JAMAIS être un simple 0 par défaut. Tant qu'aucun sous-coût n'est renseigné,
+// le total est "non renseigné" — distinct d'un total réellement nul.
+
+function coutTotal(couts) {
+  if (!couts) return null;
+  const vals = [couts.reparation, couts.materiel, couts.transport].filter((v) => v !== null && v !== undefined);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0);
+}
+function formatCout(v) {
+  return v === null || v === undefined ? `<span class="non-renseigne">non renseigné</span>` : `${v} €`;
+}
+
+function igToNiveau(ig) {
+  if (ig >= 25) return "Critique";
+  if (ig >= 18) return "Majeur";
+  if (ig >= 10) return "Moyen";
+  if (ig >= 3) return "Mineur";
+  return "Aucun";
+}
+
+// ---- Statistiques (reprise du dashboard v1, NC/web/) ------------------------
+
+const STATS_KPI = {
+  ncActives: 14,
+  scoreIaMoyen: 83,
+  tauxResolutionMois: 68,
+  tempsMoyenResolutionJours: 11.4,
+};
+
+const STATS_TOP_CAUSES = [
+  { cause: "Défaut de fabrication", count: 62 },
+  { cause: "Pièce endommagée", count: 41 },
+  { cause: "Défaut de montage sur site", count: 33 },
+];
+
+const STATS_EVOLUTION_MENSUELLE = [
+  { mois: "Avr", count: 21 }, { mois: "Mai", count: 27 }, { mois: "Juin", count: 24 },
+  { mois: "Juil", count: 19 }, { mois: "Août", count: 31 }, { mois: "Sept", count: 12 },
+];
+
+const STATS_PAR_SERVICE = [
+  { label: "Serrurerie", count: 58 }, { label: "Peinture", count: 44 }, { label: "Fournisseur", count: 39 },
+  { label: "Transport", count: 27 }, { label: "BE Methode", count: 21 }, { label: "Poseur", count: 18 },
+  { label: "Autres", count: 33 },
+];
+
+const STATS_PAR_CAUSE = [
+  { label: "Défaut de fabrication", count: 62 }, { label: "Pièce endommagée", count: 41 },
+  { label: "Défaut de montage sur site", count: 33 }, { label: "Problème d'emballage", count: 24 },
+  { label: "Info client incorrecte", count: 19 }, { label: "Autres", count: 61 },
+];
+
+const STATS_PAR_GRAVITE = [
+  { label: "Aucun", count: 71 }, { label: "Mineur", count: 118 }, { label: "Moyen", count: 64 },
+  { label: "Majeur", count: 29 }, { label: "Critique", count: 6 },
+];
+
+const STATS_PART_COUT_RENSEIGNE = 38; // % de NC avec un coût réellement non nul (vs ~62 % "0 €" trompeur)
+
+const STATS_NC_URGENTES = ["NC2026-341", "NC2026-352"];
+const STATS_NC_ATTENTE_VALIDATION = ["m2", "m11", "m7"];
